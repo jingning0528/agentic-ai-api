@@ -73,88 +73,9 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     """
     user_message = state["user_message"]
     form_fields = state["form_fields"]
-    
-    # Create system prompt for form analysis
-    system_prompt = """
-    You are a form-filling assistant. Analyze the user's message and extract information to fill in form fields.
-    For each form field provided, determine:
-    1. If the field can be filled based on the user's message
-    2. The appropriate value for the field
-    3. If additional information is needed
-    
-    Return a JSON object with filled fields and a list of missing fields.
-    """
-    
-    # Format form fields for the model
-    # field_descriptions = []
-    
-    # # Dynamically handle different field formats
-    # for field in form_fields:
-    #     # Create a formatted description for each field
-    #     try:
-    #         # Start with basic field information
-    #         field_desc = ""
-            
-    #         # Add field ID if available
-    #         if 'field_id' in field:
-    #             field_desc += f"Field ID: {field['field_id']}\n"
-    #         elif 'id' in field:
-    #             field_desc += f"Field ID: {field['id']}\n"
-                
-    #         # Add label if available
-    #         if 'label' in field:
-    #             field_desc += f"Label: {field['label']}\n"
-    #         elif 'field_label' in field:
-    #             field_desc += f"Label: {field['field_label']}\n"
-    #         elif 'fieldLabel' in field:
-    #             field_desc += f"Label: {field['fieldLabel']}\n"
-                
-    #         # Add type if available
-    #         if 'type' in field:
-    #             field_desc += f"Type: {field['type']}\n"
-    #         elif 'field_type' in field:
-    #             field_desc += f"Type: {field['field_type']}\n"
-    #         elif 'fieldType' in field:
-    #             field_desc += f"Type: {field['fieldType']}\n"
-            
-    #         # Add description if available
-    #         if field.get('description'):
-    #             field_desc += f"Description: {field['description']}\n"
-                
-    #         # Add options if available
-    #         if field.get('options') and isinstance(field['options'], list):
-    #             field_desc += f"Options: {', '.join(str(opt) for opt in field['options'])}\n"
-                
-    #         # Add validation if available
-    #         if field.get('validation'):
-    #             field_desc += f"Validation: {field['validation']}\n"
-                
-    #         # Add required status
-    #         is_required = field.get('required', field.get('is_required', field.get('isRequired', False)))
-    #         field_desc += f"Required: {'Yes' if is_required else 'No'}\n"
-            
-    #         # Add current value if available
-    #         if 'value' in field and field['value']:
-    #             field_desc += f"Current value: {field['value']}\n"
-    #         elif 'field_value' in field and field['field_value']:
-    #             field_desc += f"Current value: {field['field_value']}\n"
-    #         elif 'fieldValue' in field and field['fieldValue']:
-    #             field_desc += f"Current value: {field['fieldValue']}\n"
-                
-    #         field_descriptions.append(field_desc)
-    #     except Exception as e:
-    #         import logging
-    #         logging.getLogger(__name__).error(f"Error formatting field {field}: {str(e)}")
-    #         # Add a basic description for fields that couldn't be properly formatted
-    #         field_descriptions.append(f"Field: {str(field)}\n")
-    
-    # all_field_descriptions = "\n\n".join(field_descriptions)
-    
-    # messages = [
-    #     SystemMessage(content=system_prompt),
-    #     HumanMessage(content=f"User message: {user_message}\n\nForm fields:\n{all_field_descriptions}")
-    # ]
+ 
     messages = []
+    import pdb; pdb.set_trace()
     # Add conversation history for context if available
     if state.get("conversation_history"):
         history_context = "Previous conversation:\n"
@@ -162,12 +83,9 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
             role = "User" if entry["role"] == "user" else "Assistant"
             history_context += f"{role}: {entry['content']}\n"
         messages.append(SystemMessage(content=history_context))
-    
 
-    
     # Get response from the LLM
-    #response = await model.ainvoke(messages)
-    response = await analyze_form_executor.ainvoke({"message": state["user_message"], "formFields": state["form_fields"] })
+    response = await analyze_form_executor.ainvoke({"message": user_message, "formFields": form_fields })
     
     # import pdb; pdb.set_trace()
     output_text = (
@@ -177,16 +95,14 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     cleaned_str = output_text.replace('True', 'true').replace('False', 'false')
     
     form_data = json.loads(cleaned_str)
-    #cache_checkpointer_to_file()
+
     # Update conversation history
     history = state.get("conversation_history", [])
     history.append({"role": "user", "content": user_message})
     
     # Determine next steps based on missing fields
     missing_fields = form_data.get("missing_fields", [])
-    filled_fields = form_data.get("filled_fields", {})
-    #formFields = form_data.get("formFields", [])
-    
+    filled_fields = form_data.get("filled_fields", {})    
     status = "completed" if not missing_fields else "awaiting_info"
     current_field = missing_fields[0] if missing_fields else None
     
@@ -194,17 +110,8 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     if status == "completed":
         response_text = "Great! I've filled out the entire form based on your information."
     else:
-        # Find the current field details
-        #current_field_details = next((f for f in form_fields if f["data_id"] == current_field), {})
-        #field_label = current_field_details.get("label", current_field)
-
         response_text = form_data.get("message", "")
-        # if current_field_details.get("description"):
-        #     response_text += f" ({current_field_details['description']})"
-        # if current_field_details.get("options"):
-        #     options_text = ", ".join(current_field_details["options"])
-        #     response_text += f" Options are: {options_text}"
-    
+
     history.append({"role": "assistant", "content": response_text})
     
     return {
@@ -215,7 +122,6 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
         "conversation_history": history,
         "status": status,
         "response": response_text,
-
     }
 
 # Node 2: Process user input for specific field
@@ -401,14 +307,15 @@ async def start_form_filling(user_message: str, form_fields: list) -> Dict[str, 
     config = {"configurable": {"thread_id": thread_id}}
     
     result = await compiled_graph.ainvoke(initial_state, config)
-    # import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
     return {
         "thread_id": thread_id,
         "response": result["response"],
         "status": result["status"],
         "filled_fields": result["filled_fields"],
         "missing_fields": result["missing_fields"],
-        "current_field": result["current_field"]
+        "current_field": result["current_field"],
+        "conversation_history": result["conversation_history"]
     }
 
 # Helper function to continue the form-filling process

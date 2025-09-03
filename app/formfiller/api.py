@@ -29,6 +29,7 @@ class FormResponse(BaseModel):
     missing_fields: Optional[List[dict]] = None
     current_field: Optional[dict] = None
     next_field: Optional[dict] = None
+    conversation_history: Optional[List[dict]] = None
 
 @router.post("/start", response_model=FormResponse)
 async def start_session(request: StartFormRequest):
@@ -43,28 +44,6 @@ async def start_session(request: StartFormRequest):
     """
     try:
         result = await start_form_filling(request.message, request.formFields)
-        
-        # # Convert filled_fields from list of dicts to dictionary
-        # converted_filled_fields = {}
-        # if isinstance(result.get("filled_fields"), list):
-        #     for field in result.get("filled_fields", []):
-        #         if "data_id" in field and "field_value" in field:
-        #             converted_filled_fields[field["data_id"]] = field["field_value"]
-        #         elif "data_id" in field and "value" in field:
-        #             converted_filled_fields[field["data_id"]] = field["value"]
-        # else:
-        #     converted_filled_fields = result.get("filled_fields", {})
-        
-        # # Convert missing_fields from list of dicts to list of strings
-        # converted_missing_fields = []
-        # if isinstance(result.get("missing_fields"), list):
-        #     for field in result.get("missing_fields", []):
-        #         if isinstance(field, dict) and "data_id" in field:
-        #             converted_missing_fields.append(field["data_id"])
-        #         elif isinstance(field, str):
-        #             converted_missing_fields.append(field)
-        # else:
-        #     converted_missing_fields = result.get("missing_fields", [])
 
         # Ensure filled_fields is a list of dicts
         raw_filled = result.get("filled_fields", [])
@@ -88,7 +67,7 @@ async def start_session(request: StartFormRequest):
             missing_fields = raw_missing
         else:
             missing_fields = []
-        #import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         return FormResponse(
             thread_id=result["thread_id"],
             response=result["response"],
@@ -96,7 +75,8 @@ async def start_session(request: StartFormRequest):
             filled_fields=filled_fields,
             missing_fields=missing_fields,
             current_field=result["current_field"],
-            next_field=result["current_field"]
+            next_field=result["current_field"],
+            conversation_history=result["conversation_history"],
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error starting form session: {str(e)}")
