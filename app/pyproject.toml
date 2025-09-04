@@ -27,7 +27,9 @@ dependencies = [
     "azure-ai-documentintelligence>=1.0.2",
     "langgraph>=0.6.4",
     "structlog>=25.4.0",
-    "grandalf"    
+    "grandalf",
+    "langgraph-checkpoint-redis",
+     "redis"
 ]
 
 [project.optional-dependencies]
