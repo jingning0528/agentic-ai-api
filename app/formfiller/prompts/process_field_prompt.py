@@ -11,7 +11,6 @@ Field Details:
 - Field Type: {field_type}
 - Required: {is_required}
 - Validation Message: {validation_message}
-- Options: {options}
 
 User Message:
 "{user_message}"
@@ -35,8 +34,7 @@ Return the output in this exact format:
     "field_type": "{field_type}",
     "field_value": "<extracted_value_or_empty_string>",
     "is_required": {is_required},
-    "validation_message": "<updated_validation_message>",
-    "options": {options}
+    "validation_message": "<updated_validation_message>"
   }},
   "success": <true_or_false>
 }}
