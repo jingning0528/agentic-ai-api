@@ -67,7 +67,7 @@ async def start_session(request: StartFormRequest):
             missing_fields = raw_missing
         else:
             missing_fields = []
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         return FormResponse(
             thread_id=result["thread_id"],
             response=result["response"],
@@ -95,36 +95,38 @@ async def continue_session(request: ContinueFormRequest):
     #read_checkpointer_from_file()
     try:
         result = await continue_form_filling(request.thread_id, request.message)
-        
+        #import pdb; pdb.set_trace()
         # Ensure filled_fields is a list of dicts
-        raw_filled = result.get("filled_fields", [])
-        if isinstance(raw_filled, dict):
-            filled_fields = [
-                {"data_id": k, "field_value": v} for k, v in raw_filled.items()
-            ]
-        elif isinstance(raw_filled, list):
-            filled_fields = raw_filled
-        else:
-            filled_fields = []
+        # raw_filled = result.get("filled_fields", [])
+        # if isinstance(raw_filled, dict):
+        #     filled_fields = [
+        #         {"data_id": k, "field_value": v} for k, v in raw_filled.items()
+        #     ]
+        # elif isinstance(raw_filled, list):
+        #     filled_fields = raw_filled
+        # else:
+        #     filled_fields = []
 
-        # Ensure missing_fields is a list of dicts
-        raw_missing = result.get("missing_fields", [])
-        if raw_missing and isinstance(raw_missing[0], str):
-            missing_fields = [
-                {"data_id": m, "field_label": "", "field_type": "", "field_value": "", "is_required": True, "validation_message": ""}
-                for m in raw_missing
-            ]
-        elif isinstance(raw_missing, list):
-            missing_fields = raw_missing
-        else:
-            missing_fields = []
+        # # Ensure missing_fields is a list of dicts
+        # raw_missing = result.get("missing_fields", [])
+        # if raw_missing and isinstance(raw_missing[0], str):
+        #     missing_fields = [
+        #         {"data_id": m, "field_label": "", "field_type": "", "field_value": "", "is_required": True, "validation_message": ""}
+        #         for m in raw_missing
+        #     ]
+        # elif isinstance(raw_missing, list):
+        #     missing_fields = raw_missing
+        # else:
+        #     missing_fields = []
 
         return FormResponse(
             thread_id=result["thread_id"],
             response=result["response"],
             status=result["status"],
-            filled_fields=filled_fields,
-            missing_fields=missing_fields
+            filled_fields=result.get("filled_fields", []),
+            missing_fields=result.get("missing_fields", []),
+            current_field=result.get("current_field", {}),
+            next_field=result.get("current_field", {})
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

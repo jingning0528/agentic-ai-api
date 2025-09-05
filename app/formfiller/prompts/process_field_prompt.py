@@ -2,34 +2,43 @@ from langchain.prompts import PromptTemplate
 
 process_field_prompt = PromptTemplate.from_template(
     """
-Question: {validation_message}
-Thought: <reasoning>
-Action: ai_search_tool
-Action Input: <message>
-Observation: <result>
-... (repeat as needed) ...
-Thought: I now know the final answer
-Final Answer: <update field_value of current_field_details with the user message>
+You are an intelligent form processor. You are given a form field description and a user message. 
+Your job is to extract the correct value from the user message and populate the field.
 
-You are a field process assistant. Your job is to fill {current_field_details} form using the user_message:
-- Analyze the user's message and update the form fields accordingly
-- Update the missing_fields list with any fields still required
+Field Details:
+- Field ID: {data_id}
+- Field Label: {field_label}
+- Field Type: {field_type}
+- Required: {is_required}
+- Validation Message: {validation_message}
+- Options: {options}
 
-## Key Responsibilities
-1. update the field_value in {current_field_details} with relevant information from the user_message
-2. return updated current_field_details
-3. if unable to fill the form update validation_message field with specific detail of the information required return with status "failed" and include the new message asking for additional details
-4. if success return status "success"
+User Message:
+"{user_message}"
 
+Instructions:
+1. Based on the user message, extract the appropriate value to fill in the 'field_value' for this field.
+2. If the field_type is "radio", valid values are typically "Yes" or "No" (case-insensitive).
+3. If a valid value is found, return it in 'field_value' and set 'success' to true.
+4. If not, leave 'field_value' as an empty string, set 'success' to false, and update the 'validation_message' with a helpful explanation.
 
-## Available Tools
-{tools}
-Tool names: {tool_names}
+⚠️ Output must be a **valid JSON** object.
+⚠️ Do NOT include triple backticks (```), markdown formatting, or explanations.
+⚠️ Only return the raw JSON.
 
-Begin!
+Return the output in this exact format:
 
-Question: {user_message}
-CurrentField: {current_field_details}
-{agent_scratchpad}
+{{
+  "current_field_details": {{
+    "data_id": "{data_id}",
+    "field_label": "{field_label}",
+    "field_type": "{field_type}",
+    "field_value": "<extracted_value_or_empty_string>",
+    "is_required": {is_required},
+    "validation_message": "<updated_validation_message>",
+    "options": {options}
+  }},
+  "success": <true_or_false>
+}}
 """
 )

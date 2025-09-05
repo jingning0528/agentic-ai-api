@@ -1,15 +1,10 @@
 from ..llm_client import llm
-from langchain.agents import create_react_agent, AgentExecutor
 from ..prompts.process_field_prompt import process_field_prompt
+from langchain.chains import LLMChain
 
-tools = []
-process_field_agent = create_react_agent(llm, tools, process_field_prompt)
-
-process_field_executor = AgentExecutor(
-    agent=process_field_agent,
-    tools=tools,
-    verbose=True,
-    handle_parsing_errors=True,
-    max_iterations=10,
-    return_intermediate_steps=True,
+# You don't need tools or ReAct agent
+process_field_executor = LLMChain(
+    llm=llm,
+    prompt=process_field_prompt,
+    verbose=True
 )
