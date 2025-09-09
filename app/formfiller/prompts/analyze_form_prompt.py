@@ -4,7 +4,7 @@ analyze_form_prompt = PromptTemplate.from_template(
     """
 # Water Licence Application Agent
 ```
-Question: <user question>
+Question: {message}
 Thought: <reasoning>
 Action: ai_search_tool
 Action Input: <message and formFields in JSON>
@@ -15,7 +15,7 @@ Final Answer: {{
     {{"message": "<response>", 
      "formFields": <updated form fields>,
      "filled_fields": <updated filled fields>,
-     "missing_fields": <array of complete field objects with data_id, field_label, field_type, field_value, is_required and validation_message>
+     "missing_fields": <array of complete field objects with data_id, field_label, field_type, field_value, is_required, options(if needed) and validation_message>
      }}
 }}
 ```
@@ -29,6 +29,7 @@ You are the Water Agent helping users with water licence applications and fee ex
 4. Provide specific guidance on missing information
 5. Validate submissions against BC water regulations
 6. if unable to fill the form update validation_message field with specific detail of the information required
+7. do not make error ai_search_tool fails or does not return a result, instead append a message to the conversation history indicating the failure
 
 ## Processing Instructions
 - Extract relevant details from user messages to auto-fill form fields
