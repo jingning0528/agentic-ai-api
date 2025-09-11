@@ -38,5 +38,4 @@ Return the output in this exact format:
   }},
   "success": <true_or_false>
 }}
-"""
-)
+""")

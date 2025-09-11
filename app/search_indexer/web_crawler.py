@@ -123,7 +123,7 @@ def start_indexing():
                 blob_client = container_client.get_blob_client(blob.name)
                 blob_data = blob_client.download_blob().readall()
 
-                if blob.name.endswith((".pdf", ".docx", ".doc", ".txt", ".html")):
+                if blob.name.endswith((".pdf", ".docx", ".doc", ".txt", ".html", ".json")):
                     logger.info("Processing document", blob_name=blob.name)
 
                     # Use Document Intelligence to process the document

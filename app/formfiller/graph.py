@@ -19,7 +19,7 @@ import asyncio
 from app.formfiller.agents import analyze_form_executor, process_field_executor
 import json
 import re
-import logging
+import ast
 
 # Load environment variables
 load_dotenv()
@@ -67,6 +67,40 @@ class FormFillerState(TypedDict):
     response: str
     thread_id: str
 
+def extract_json_from_output(output: str):
+    # Clean up formatting
+    output = output.strip().strip("`").strip()
+
+    # Remove "Final Answer:" prefix if present
+    if output.startswith("Final Answer:"):
+        output = output.replace("Final Answer:", "", 1).strip()
+
+    # Try to extract the JSON block using regex
+    match = re.search(r"({.*})", output, re.DOTALL)
+    if not match:
+        return {
+            "error": "Agent failed to complete analysis. No valid JSON found.",
+            "raw_output": output
+        }
+
+    json_str = match.group(1).strip()
+
+    # Try parsing as real JSON
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        pass  # Try next method
+
+    # Try parsing as Python dict (e.g., single quotes)
+    try:
+        return ast.literal_eval(json_str)
+    except Exception as e:
+        return {
+            "error": "Failed to parse output as JSON or Python dict.",
+            "exception": str(e),
+            "raw_output": json_str
+        }
+
 # Node 1: Initial form analysis: orchestrator node
 async def analyze_form(state: FormFillerState) -> FormFillerState:
     """
@@ -88,33 +122,47 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     # Get response from the LLM
     response = await analyze_form_executor.ainvoke({"message": user_message, "formFields": form_fields })
     
-    # import pdb; pdb.set_trace()
-    output_text = (
-        response.get("output") if isinstance(response, dict) else None
-    ) or str(response)
+    #import pdb; pdb.set_trace()
+    # output_text = (
+    #     response.get("output") if isinstance(response, dict) else None
+    # ) or str(response)
     
-    cleaned_str = output_text.replace('True', 'true').replace('False', 'false')
-    
-    if not cleaned_str.strip():
-        raise ValueError("Input string to json.loads() is empty.")
 
-    form_data = json.loads(cleaned_str)
+    # cleaned_str = rp.replace('True', 'true').replace('False', 'false')
+
+    cleaned_str = extract_json_from_output(response['text'])
+    
+    # if not cleaned_str.strip():
+    #     raise ValueError("Input string to json.loads() is empty.")
+    #import pdb; pdb.set_trace()
+    #form_data = json.loads(cleaned_str)
+    # if cleaned_str is string
+    if isinstance(cleaned_str, str):
+            return {
+                **state,
+                "filled_fields": None,
+                "missing_fields": None,
+                "current_field": None,
+                "conversation_history": None,
+                "status": "awaiting_info",
+                "response": cleaned_str,
+            }
 
     # Update conversation history
     history = state.get("conversation_history", [])
     history.append({"role": "user", "content": user_message})
     
     # Determine next steps based on missing fields
-    missing_fields = form_data.get("missing_fields", [])
-    filled_fields = form_data.get("filled_fields", {})    
+    missing_fields = cleaned_str.get("missing_fields", [])
+    filled_fields = cleaned_str.get("filled_fields", {})    
     status = "completed" if not missing_fields else "awaiting_info"
     current_field = missing_fields[0] if missing_fields else None
     
     # Generate response based on analysis
-    if status == "completed":
+    if status == "completed" and filled_fields:
         response_text = "Great! I've filled out the entire form based on your information."
     else:
-        response_text = form_data.get("message", "")
+        response_text = cleaned_str.get("message", "")
 
     history.append({"role": "assistant", "content": response_text})
     
@@ -169,7 +217,6 @@ async def process_field_input(state: FormFillerState) -> FormFillerState:
     #import pdb; pdb.set_trace()
     # If output is a string and not JSON, treat as validation message
     try:
-        import ast
         cleaned_str = ast.literal_eval(output_text)
         form_data = json.loads(cleaned_str['text'])
     except Exception:
@@ -323,7 +370,7 @@ async def continue_form_filling(thread_id: str, user_message: str) -> Dict[str, 
     # Continue graph execution
     result = await compiled_graph.ainvoke(None, config)
     
-    # import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     # compiled_graph.update_state with the current state
     compiled_graph.update_state(config, state)    
 

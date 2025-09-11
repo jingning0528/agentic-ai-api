@@ -72,6 +72,7 @@ def ai_search_tool(query: str) -> str:
     """
     import logging
     #import pdb; pdb.set_trace()
+    #query = "water licence application"
     client = _get_search_client()
     logging.info(f"ai_search_tool called with query: {query}")
 

@@ -7,19 +7,15 @@ import logging
 from typing import Optional, List, TypedDict
 from fastapi import FastAPI, HTTPException
 from app.formfiller.api import router as api_router
-#from app.api import router as api_router
+from app.api import router as api_router_orchestrator
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from app.llm.workflow import app_workflow
 
-# Import agentic AI router conditionally
-try:
-    from app.agenticai.endpoints import router as agenticai_router
-    AGENTICAI_AVAILABLE = True
-except ImportError as e:
-    print(f"Agentic AI not available: {e}")
-    agenticai_router = None
-    AGENTICAI_AVAILABLE = False
+#from app.backend.schemas import OrchestratorRequest, OrchestratorResponse, Reference
+#from app.backend.graph import build_graph
+from typing import Any, Dict, List
+
 
 # Minimal request/response models for FastAPI endpoint typing
 class RequestModel(BaseModel):
@@ -57,13 +53,6 @@ app = FastAPI(
     ),
     version="0.1.0"
 )
-
-# Include agentic AI router if available
-if AGENTICAI_AVAILABLE and agenticai_router:
-    app.include_router(agenticai_router)
-    print("✅ Agentic AI endpoints loaded successfully")
-else:
-    print("⚠️ Agentic AI endpoints not available")
 
 # Log app init once
 logger.info("NR Agentic AI API initialized (log level=%s)", LOG_LEVEL)
@@ -113,8 +102,44 @@ async def process_request(request: RequestModel):
             status_code=500,
             detail=f"Error processing request: {str(e)}"
         ) from e
+
+
+# @app.post("/orchestrate", response_model=OrchestratorResponse)
+# def orchestrate(req: OrchestratorRequest) -> OrchestratorResponse:
+#     """
+#     Advance the form by running the next section agent via the graph.
+#     The graph performs one step and either loops to the next needed section or finishes.
+#     """
+#     state: Dict[str, Any] = {
+#         "form": req.form or {},
+#         "next_section": "source",
+#         "completed": False,
+#         "references": [],
+#     }
+
+#     graph = build_graph()
+#     state = graph.invoke(state,    
+#         config={
+#         "recursion_limit": 50,   # raise for debugging
+#         "log_level": "DEBUG",    # see node visits
+#     }, )
+
+#     values: Dict[str, Any] = state.get("values", {}) or {}
+#     clarifications: List[str] = state.get("clarifications", []) or []
+#     refs = [Reference(**r) for r in (state.get("references") or [])]
+#     completed = bool(state.get("completed"))
+
+#     return OrchestratorResponse(
+#         values=values,
+#         clarifications=clarifications,
+#         next_section=state.get("next_section", "source"),
+#         completed=completed,
+#         references=refs,
+#     )
+
 # Include API router
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router_orchestrator, prefix="/api/orchestrator")
 
 if __name__ == "__main__":
     import uvicorn
