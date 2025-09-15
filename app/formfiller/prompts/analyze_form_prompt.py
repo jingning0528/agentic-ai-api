@@ -9,6 +9,7 @@ You are an assistant that helps fill in form data based on a user message and th
 Inputs:
 - User message: {message}
 - Current form fields (JSON array): {formFields}
+- Search results (JSON array): {search_results}
 
 Instructions:
 1. If the user message contains information that matches a form field, fill that field.
@@ -36,6 +37,6 @@ Instructions:
 """
 
 analyze_form_prompt = PromptTemplate(
-    input_variables=["message", "formFields"],
+    input_variables=["message", "formFields", "search_results"],
     template=template
 )

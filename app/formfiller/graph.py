@@ -21,6 +21,11 @@ import json
 import re
 import ast
 
+from app.llm.tools.ai_search_tool import ai_search_tool
+
+# simple search function (you could plug in SerpAPI, Tavily, Bing, etc.)
+def search_tool(query: str) -> str:
+        return ai_search_tool(query)
 # Load environment variables
 load_dotenv()
 
@@ -119,9 +124,11 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
             history_context += f"{role}: {entry['content']}\n"
         messages.append(SystemMessage(content=history_context))
 
+    # get labels for all the fields
+    search_results = search_tool(json.dumps({"message": user_message, "formFields": form_fields}))
     # Get response from the LLM
-    response = await analyze_form_executor.ainvoke({"message": user_message, "formFields": form_fields })
-    
+    response = await analyze_form_executor.ainvoke({"message": user_message, "formFields": form_fields, "search_results": search_results})
+
     #import pdb; pdb.set_trace()
     # output_text = (
     #     response.get("output") if isinstance(response, dict) else None
