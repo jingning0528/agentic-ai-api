@@ -123,13 +123,19 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     thread_id = state.get("thread_id", str(uuid4()))
 
     # Add conversation history for context if available
-    messages = []
     if conversation_history:
         history_context = "Previous conversation:\n"
         for entry in conversation_history:
-            role = "User" if entry["role"] == "user" else "Assistant"
-            history_context += f"{role}: {entry['content']}\n"
-        messages.append(SystemMessage(content=history_context))
+            role_val = entry.get("role")
+            content_val = entry.get("content", "")
+            if role_val == "user":
+                role = "User"
+            elif role_val == "assistant":
+                role = "Assistant"
+            else:
+                role = str(role_val) if role_val else "Unknown"
+            history_context += f"{role}: {content_val}\n"
+        conversation_history.append(SystemMessage(content=history_context))
 
     # get labels for all the fields
     search_results = search_tool(json.dumps({"message": user_message, "formFields": form_fields}))
@@ -367,23 +373,23 @@ async def chat_analyze_form(state: FormFillerState) -> Dict[str, Any]:
     """
     thread_id = str(uuid4())
     
-    initial_state = {
-        "user_message": state["user_message"],
-        "form_fields": state["form_fields"],
-        "filled_fields": [],
-        "missing_fields": [],
-        "current_field": None,
-        #"next_field": None,
-        "conversation_history": [],
-        "status": "in_progress",
-        "response_message": "",
-        "thread_id": thread_id
-    }
+    # initial_state = {
+    #     "user_message": state["user_message"],
+    #     "form_fields": state["form_fields"],
+    #     "filled_fields": [],
+    #     "missing_fields": [],
+    #     "current_field": None,
+    #     #"next_field": None,
+    #     "conversation_history": state["user_message"],
+    #     "status": "in_progress",
+    #     "response_message": "",
+    #     "thread_id": thread_id
+    # }
     
     config = {"configurable": {"thread_id": thread_id}}
 
     try:
-        result = await compiled_graph.ainvoke(initial_state, config)
+        result = await compiled_graph.ainvoke(state, config)
  
         return {
             "thread_id": thread_id,
