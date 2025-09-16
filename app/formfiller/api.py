@@ -1,3 +1,4 @@
+
 """
 FastAPI endpoints for the form-filling agent.
 """
@@ -5,9 +6,30 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from uuid import UUID
-from .graph import FormField, start_form_filling, continue_form_filling
+from .graph import FormField, chat_analyze_form
 
 router = APIRouter()
+
+class ChatRequest(BaseModel):
+    user_message: str
+    form_fields: Optional[List[Dict[str, Any]]] = None
+    filled_fields: Optional[List[Dict[str, Any]]] = None
+    missing_fields: Optional[List[Dict[str, Any]]] = None
+    current_field: Optional[list] = None
+    conversation_history: Optional[list] = None
+    status: Optional[str] = None
+    response_message: Optional[str] = None
+    thread_id: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    thread_id: str
+    response_message: str
+    status: str
+    form_fields: Optional[list] = None
+    filled_fields: Optional[List[Dict[str, Any]]] = None
+    missing_fields: Optional[list] = None
+    current_field: Optional[list] = None
+    conversation_history: Optional[list] = None
 
 # Request and response models
 class StartFormRequest(BaseModel):
@@ -31,108 +53,64 @@ class FormResponse(BaseModel):
     next_field: Optional[dict] = None
     conversation_history: Optional[List[dict]] = None
 
-@router.post("/start", response_model=FormResponse)
-async def start_session(request: StartFormRequest):
-    """
-    Start a new form-filling session.
-    
-    Args:
-        request: Contains message and formFields to fill
-        
-    Returns:
-        Initial agent response and session information
-    """
-    try:
-        result = await start_form_filling(request.message, request.formFields)
 
-        # Ensure filled_fields is a list of dicts
+@router.post("/chat", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest):
+    """
+    New /chat endpoint: sends every request to analyze_form orchestrator agent.
+    Accepts the new payload structure (user_message required, others optional).
+    """
+    # Build state dict from request, only including provided fields
+    state = {k: v for k, v in request.dict().items() if v is not None}
+    if "user_message" not in state:
+        raise HTTPException(status_code=422, detail="user_message is required")
+    try:
+        result = await chat_analyze_form(state)
+        # Ensure filled_fields is always a list of dicts
         raw_filled = result.get("filled_fields", [])
         if isinstance(raw_filled, dict):
-            filled_fields = [
-                {"data_id": k, "field_value": v} for k, v in raw_filled.items()
-            ]
+            filled_fields = [raw_filled]
         elif isinstance(raw_filled, list):
             filled_fields = raw_filled
         else:
             filled_fields = []
 
-        # Ensure missing_fields is a list of dicts
-        raw_missing = result.get("missing_fields", [])
-        if raw_missing and isinstance(raw_missing[0], str):
-            missing_fields = [
-                {"data_id": m, "field_label": "", "field_type": "", "field_value": "", "is_required": True, "validation_message": ""}
-                for m in raw_missing
-            ]
-        elif isinstance(raw_missing, list):
-            missing_fields = raw_missing
-        else:
-            missing_fields = []
-        #import pdb; pdb.set_trace()
-        return FormResponse(
-            thread_id=result["thread_id"],
-            response=result["response"],
-            status=result["status"],
+        # Ensure current_field is always a list
+        current_field = result.get("current_field", [])
+        if current_field is None:
+            current_field = []
+        elif isinstance(current_field, dict):
+            current_field = [current_field]
+        elif not isinstance(current_field, list):
+            current_field = [current_field]
+
+        # Update form_fields with filled_fields if filled_fields is not empty
+        form_fields = result.get("form_fields", [])
+        if filled_fields:
+            # Update form_fields with values from filled_fields
+            updated_form_fields = []
+            for field in form_fields:
+                data_id = field.get("data_id") or field.get("field_id")
+                match = next((f for f in filled_fields if (f.get("data_id") or f.get("field_id")) == data_id), None)
+                if data_id and match:
+                    updated = {**field, **match}
+                    updated_form_fields.append(updated)
+                else:
+                    updated_form_fields.append(field)
+            form_fields = updated_form_fields
+
+        return ChatResponse(
+            thread_id=result.get("thread_id", ""),
+            response_message=result.get("response_message", ""),
+            status=result.get("status", ""),
+            form_fields=form_fields,
             filled_fields=filled_fields,
-            missing_fields=missing_fields,
-            current_field=result["current_field"],
-            next_field=result["current_field"],
-            conversation_history=result["conversation_history"],
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error starting form session: {str(e)}")
-
-@router.post("/continue", response_model=FormResponse)
-async def continue_session(request: ContinueFormRequest):
-    """
-    Continue an existing form-filling session.
-    
-    Args:
-        request: Contains thread ID and message
-        
-    Returns:
-        Updated agent response and session information
-    """
-    #read_checkpointer_from_file()
-    try:
-        result = await continue_form_filling(request.thread_id, request.message)
-        #import pdb; pdb.set_trace()
-        # Ensure filled_fields is a list of dicts
-        # raw_filled = result.get("filled_fields", [])
-        # if isinstance(raw_filled, dict):
-        #     filled_fields = [
-        #         {"data_id": k, "field_value": v} for k, v in raw_filled.items()
-        #     ]
-        # elif isinstance(raw_filled, list):
-        #     filled_fields = raw_filled
-        # else:
-        #     filled_fields = []
-
-        # # Ensure missing_fields is a list of dicts
-        # raw_missing = result.get("missing_fields", [])
-        # if raw_missing and isinstance(raw_missing[0], str):
-        #     missing_fields = [
-        #         {"data_id": m, "field_label": "", "field_type": "", "field_value": "", "is_required": True, "validation_message": ""}
-        #         for m in raw_missing
-        #     ]
-        # elif isinstance(raw_missing, list):
-        #     missing_fields = raw_missing
-        # else:
-        #     missing_fields = []
-
-        return FormResponse(
-            thread_id=result["thread_id"],
-            response=result["response"],
-            status=result["status"],
-            filled_fields=result.get("filled_fields", []),
             missing_fields=result.get("missing_fields", []),
-            current_field=result.get("current_field", {}),
-            next_field=result.get("current_field", {})
+            current_field=current_field,
+            conversation_history=result.get("conversation_history", []),
         )
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error continuing form session: {str(e)}")
-
+        raise HTTPException(status_code=500, detail=f"Error in /chat: {str(e)}")
 @router.get("/schema")
 def get_schema():
     """Get the expected schema for API requests"""
@@ -142,8 +120,8 @@ def get_schema():
             "formFields": [
                 {
                     "data_id": "string - unique identifier for this field",
-                    "field_label": "string - human-readable label for the field",
-                    "field_type": "string - type of input (text, radio, select, etc.)",
+                    "fieldLabel": "string - human-readable label for the field",
+                    "fieldType": "string - type of input (text, radio, select, etc.)",
                     "field_value": "string - initial value (empty string by default)",
                     "is_required": "boolean - whether this field must be filled",
                     "options": "array of strings - possible values for dropdown/radio fields (optional)"
@@ -159,8 +137,8 @@ def get_schema():
             "formFields": [
                 {
                     "data_id": "V1IsEligibleForFeeExemption",
-                    "field_label": "Are you eligible for fee exemption?",
-                    "field_type": "radio",
+                    "fieldLabel": "Are you eligible for fee exemption?",
+                    "fieldType": "radio",
                     "field_value": "",
                     "is_required": True,
                     "options": ["Yes", "No"]

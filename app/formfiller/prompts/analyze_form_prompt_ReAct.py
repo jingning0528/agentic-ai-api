@@ -54,9 +54,9 @@ Observation: No search performed
   "missing_fields": [
     {{
       "data_id": "<string>",
-      "field_label": "<string>",
-      "field_type": "<string>",
-      "field_value": <value or null>,
+      "fieldLabel": "<string>",
+      "fieldType": "<string>",
+      "fieldValue": <value or null>,
       "is_required": true,
       "options": <list of options if applicable>,
       "validation_message": "<reason this field is missing or invalid>"
