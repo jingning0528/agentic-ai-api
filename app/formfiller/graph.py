@@ -63,7 +63,7 @@ class FormFillerState(TypedDict, total=False):
     """State for the form-filling workflow"""
     user_message: str  # required
     form_fields: list  # optional
-    filled_fields: dict[str, Any]  # optional
+    filled_fields: list[dict[str, Any]]  # optional
     missing_fields: list[str]  # optional
     current_field: Optional[List[dict]]  # optional
     #next_field: Optional[List[dict]]  # optional
@@ -114,7 +114,7 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     # Initialize optional fields if not present
     user_message = state["user_message"]
     form_fields = state.get("form_fields", [])
-    filled_fields = state.get("filled_fields", {})
+    filled_fields = state.get("filled_fields", [])
     missing_fields = state.get("missing_fields", [])
     current_field = state.get("current_field")
     conversation_history = state.get("conversation_history", [])
@@ -147,7 +147,7 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     if isinstance(cleaned_str, str):
         return {
             **state,
-            "filled_fields": {},
+            "filled_fields": [],
             "missing_fields": [],
             "current_field": None,
             "conversation_history": conversation_history,
@@ -161,8 +161,17 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     history.append({"role": "user", "content": user_message})
 
     # Determine next steps based on missing fields
+    new_filled_fields = cleaned_str.get("filled_fields", [])
+    # Always append, never overwrite
+    if filled_fields is None:
+        filled_fields = []
+    if new_filled_fields:
+        # Only add new fields that are not already present (by data_id)
+        existing_ids = {f.get('data_id') for f in filled_fields if isinstance(f, dict)}
+        for f in new_filled_fields:
+            if isinstance(f, dict) and f.get('data_id') not in existing_ids:
+                filled_fields.append(f)
     missing_fields = cleaned_str.get("missing_fields", [])
-    filled_fields = cleaned_str.get("filled_fields", {})
     status = "completed" if not missing_fields else "awaiting_info"
     current_field = missing_fields[0] if missing_fields else None
 
@@ -208,7 +217,7 @@ async def process_field_input(state: FormFillerState) -> FormFillerState:
     Processes user input for a specific requested field. Loops until all fields are filled.
     """
     user_message = state["user_message"]
-    filled_fields = state.get("filled_fields", {})
+    filled_fields = state.get("filled_fields", [])
     form_fields = state.get("form_fields", [])
     missing_fields = state.get("missing_fields", [])
     conversation_history = state.get("conversation_history", [])
@@ -219,7 +228,7 @@ async def process_field_input(state: FormFillerState) -> FormFillerState:
     # If no current_field or missing_fields, return state
     if not current_field or not missing_fields:
         user_message = state["user_message"]
-        filled_fields = state.get("filled_fields", {})
+        filled_fields = state.get("filled_fields", [])
         missing_fields = state.get("missing_fields", [])
         conversation_history = state.get("conversation_history", [])
         current_field = state.get("current_field")
@@ -266,9 +275,13 @@ async def process_field_input(state: FormFillerState) -> FormFillerState:
         current_field_details_updated = form_data.get('current_field_details')
         success = form_data.get('success', False)
         if isinstance(current_field_details_updated, dict) and success:
-            # Update filled_fields (dict)
-            filled_fields = filled_fields.copy() if filled_fields else {}
-            filled_fields[current_field_details_updated['data_id']] = current_field_details_updated
+            # Always append, never overwrite
+            if filled_fields is None:
+                filled_fields = []
+            # Only add if not already present (by data_id)
+            existing_ids = {f.get('data_id') for f in filled_fields if isinstance(f, dict)}
+            if current_field_details_updated.get('data_id') not in existing_ids:
+                filled_fields.append(current_field_details_updated)
             # Remove from missing_fields
             missing_fields = [f for f in missing_fields if (f.get('data_id') if isinstance(f, dict) else f) != current_field_details_updated['data_id']]
             current_field = missing_fields[0] if missing_fields else None

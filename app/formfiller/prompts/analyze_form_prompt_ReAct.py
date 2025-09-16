@@ -56,7 +56,7 @@ Observation: No search performed
       "data_id": "<string>",
       "field_label": "<string>",
       "field_type": "<string>",
-      "field_value": <value or null>,
+      "fieldValue": <value or null>,
       "is_required": true,
       "options": <list of options if applicable>,
       "validation_message": "<reason this field is missing or invalid>"
