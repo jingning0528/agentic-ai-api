@@ -68,6 +68,18 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "service": "NR Agentic AI API"}
 
+# @app.post("/simple_flow")
+# async def process_form(req: UserRequest):
+#     state = req.dict()
+#     state["message"] = req.message  # latest user message
+#     final_state = form_filler.invoke(state)
+#     return {
+#         "message": final_state["message"],
+#         "formFields": final_state["formFields"],
+#         "filled_fields": final_state["filled_fields"],
+#         "missing_fields": final_state["missing_fields"],
+#         "conversation": final_state["conversation"]
+    # }
 
 @app.post("/api/process", response_model=ResponseModel)
 async def process_request(request: RequestModel):
@@ -138,7 +150,7 @@ async def process_request(request: RequestModel):
 #     )
 
 # Include API router
-app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix="/api")
 app.include_router(api_router_orchestrator, prefix="/api/orchestrator")
 
 if __name__ == "__main__":

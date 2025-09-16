@@ -59,18 +59,18 @@ class FormField(TypedDict):
     validation: Optional[str]  # Validation rules - Not in API model but preserved
 
 # Define the state structure for our graph
-class FormFillerState(TypedDict):
+class FormFillerState(TypedDict, total=False):
     """State for the form-filling workflow"""
-    user_message: str
-    form_fields: list
-    filled_fields: dict[str, Any]
-    missing_fields: list[str]
-    current_field: Optional[List[dict]] = None
-    #next_field: Optional[List[dict]] = None
-    conversation_history: List[Dict[str, Any]]
-    status: Literal["in_progress", "awaiting_info", "completed"]
-    response: str
-    thread_id: str
+    user_message: str  # required
+    form_fields: list  # optional
+    filled_fields: dict[str, Any]  # optional
+    missing_fields: list[str]  # optional
+    current_field: Optional[List[dict]]  # optional
+    #next_field: Optional[List[dict]]  # optional
+    conversation_history: List[Dict[str, Any]]  # optional
+    status: Literal["in_progress", "awaiting_info", "completed"]  # optional
+    response_message: str  # optional
+    thread_id: str  # optional
 
 def extract_json_from_output(output: str):
     # Clean up formatting
@@ -109,17 +109,24 @@ def extract_json_from_output(output: str):
 # Node 1: Initial form analysis: orchestrator node
 async def analyze_form(state: FormFillerState) -> FormFillerState:
     """
-    Analyzes user input and form fields to extract available information and identify missing fields.
+    Orchestrator agent: analyzes user input and form fields, identifies missing fields, and routes to process_field_input if needed.
     """
+    # Initialize optional fields if not present
     user_message = state["user_message"]
-    form_fields = state["form_fields"]
- 
-    messages = []
-    #import pdb; pdb.set_trace()
+    form_fields = state.get("form_fields", [])
+    filled_fields = state.get("filled_fields", {})
+    missing_fields = state.get("missing_fields", [])
+    current_field = state.get("current_field")
+    conversation_history = state.get("conversation_history", [])
+    status = state.get("status", "in_progress")
+    response_message = state.get("response_message", "")
+    thread_id = state.get("thread_id", str(uuid4()))
+
     # Add conversation history for context if available
-    if state.get("conversation_history"):
+    messages = []
+    if conversation_history:
         history_context = "Previous conversation:\n"
-        for entry in state["conversation_history"]:
+        for entry in conversation_history:
             role = "User" if entry["role"] == "user" else "Assistant"
             history_context += f"{role}: {entry['content']}\n"
         messages.append(SystemMessage(content=history_context))
@@ -129,142 +136,182 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     # Get response from the LLM
     response = await analyze_form_executor.ainvoke({"message": user_message, "formFields": form_fields, "search_results": search_results})
 
-    #import pdb; pdb.set_trace()
-    # output_text = (
-    #     response.get("output") if isinstance(response, dict) else None
-    # ) or str(response)
-    
-
-    # cleaned_str = rp.replace('True', 'true').replace('False', 'false')
-
     cleaned_str = extract_json_from_output(response['text'])
-    
-    # if not cleaned_str.strip():
-    #     raise ValueError("Input string to json.loads() is empty.")
-    #import pdb; pdb.set_trace()
-    #form_data = json.loads(cleaned_str)
-    # if cleaned_str is string
+
     if isinstance(cleaned_str, str):
-            return {
-                **state,
-                "filled_fields": None,
-                "missing_fields": None,
-                "current_field": None,
-                "conversation_history": None,
-                "status": "awaiting_info",
-                "response": cleaned_str,
-            }
+        return {
+            **state,
+            "filled_fields": {},
+            "missing_fields": [],
+            "current_field": None,
+            "conversation_history": conversation_history,
+            "status": "awaiting_info",
+            "response_message": cleaned_str,
+            "thread_id": thread_id,
+        }
 
     # Update conversation history
-    history = state.get("conversation_history", [])
+    history = conversation_history.copy()
     history.append({"role": "user", "content": user_message})
-    
+
     # Determine next steps based on missing fields
     missing_fields = cleaned_str.get("missing_fields", [])
-    filled_fields = cleaned_str.get("filled_fields", {})    
+    filled_fields = cleaned_str.get("filled_fields", {})
     status = "completed" if not missing_fields else "awaiting_info"
     current_field = missing_fields[0] if missing_fields else None
-    
+
     # Generate response based on analysis
     if status == "completed" and filled_fields:
-        response_text = "Great! I've filled out the entire form based on your information."
+        response_message = "Great! I've filled out the entire form based on your information."
     else:
-        response_text = cleaned_str.get("message", "")
+        response_message = cleaned_str.get("message", "")
 
-    history.append({"role": "assistant", "content": response_text})
-    
+    history.append({"role": "assistant", "content": response_message})
+
+    # If there are missing fields, route to process_field_input
+    if missing_fields:
+        # Call process_field_input directly
+        next_state = {
+            **state,
+            "filled_fields": filled_fields,
+            "form_fields": form_fields,
+            "missing_fields": missing_fields,
+            "current_field": current_field,
+            "conversation_history": history,
+            "status": "awaiting_info",
+            "response_message": response_message,
+            "thread_id": thread_id,
+        }
+        return await process_field_input(next_state)
+
     return {
         **state,
         "filled_fields": filled_fields,
+        "form_fields": form_fields,
         "missing_fields": missing_fields,
         "current_field": current_field,
         "conversation_history": history,
         "status": status,
-        "response": response_text,
+        "response_message": response_message,
+        "thread_id": thread_id,
     }
 
 # Node 2: Process user input for specific field
 async def process_field_input(state: FormFillerState) -> FormFillerState:
     """
-    Processes user input for a specific requested field.
+    Processes user input for a specific requested field. Loops until all fields are filled.
     """
-    # read_checkpointer_from_file()
     user_message = state["user_message"]
-    current_field_details = state["current_field"]
-    #form_fields = state["form_fields"]
-    filled_fields = state["filled_fields"].copy()
-    missing_fields = state["missing_fields"].copy()
-    
-    #import pdb; pdb.set_trace()
-    #cache_checkpointer_to_file()
-    # Get the current field details
-    # current_field_id = current_field["data_id"] if isinstance(current_field, dict) else current_field
-    # current_field_details = next((f for f in current_field if f["data_id"] == current_field_id), None)    
-    
-    if not current_field_details:
-        return state
-    #import pdb; pdb.set_trace()
-    # Get response from the LLM
-    response = await process_field_executor.ainvoke(
-        {
-            "current_field_details": current_field_details,
-            "data_id": current_field_details["data_id"],
-            "field_label": current_field_details["field_label"],
-            "field_type": current_field_details["field_type"],
-            "is_required": current_field_details["is_required"],
-            "validation_message": current_field_details.get("validation_message", ""),
-            "options": current_field_details.get("options", []),
-            "user_message": state["user_message"]
-        }
-    )
+    filled_fields = state.get("filled_fields", {})
+    form_fields = state.get("form_fields", [])
+    missing_fields = state.get("missing_fields", [])
+    conversation_history = state.get("conversation_history", [])
+    current_field = state.get("current_field")
+    thread_id = state.get("thread_id", str(uuid4()))
+    response_message = state.get("response_message", "")
 
-    output_text = (response.get("output") if isinstance(response, dict) else None) or str(response)
+    # If no current_field or missing_fields, return state
+    if not current_field or not missing_fields:
+        user_message = state["user_message"]
+        filled_fields = state.get("filled_fields", {})
+        missing_fields = state.get("missing_fields", [])
+        conversation_history = state.get("conversation_history", [])
+        current_field = state.get("current_field")
+        thread_id = state.get("thread_id", str(uuid4()))
 
-    print(output_text)
-    #import pdb; pdb.set_trace()
-    # If output is a string and not JSON, treat as validation message
-    try:
-        cleaned_str = ast.literal_eval(output_text)
-        form_data = json.loads(cleaned_str['text'])
-    except Exception:
-        form_data = {"status": "failed", "message": "Invalid input format."}
+        # If no current_field or missing_fields, return state
+        if not current_field or not missing_fields:
+            return {
+                **state,
+                "status": "completed" if not missing_fields else "awaiting_info",
+                "thread_id": thread_id,
+            }
 
-    history = state["conversation_history"]
-    history.append({"role": "user", "content": user_message})
-
-    current_field_details_updated = form_data['current_field_details']
-    if isinstance(current_field_details_updated, dict) and form_data['success']:
-        state["filled_fields"].append(current_field_details_updated)
-        state["missing_fields"] = [f for f in state["missing_fields"] if f["data_id"] != current_field_details_updated['data_id']]
-        state["current_field"] = state["missing_fields"][0] if state["missing_fields"] else None
-        state["next_field"] = state["current_field"] if state["current_field"] else None
-        
-        if not state["missing_fields"]:
-            state["status"] = "completed"
+        # Always work on the current_field (assume it's a dict or list of dicts)
+        if isinstance(current_field, list):
+            field = current_field[0]
         else:
-            state["status"] = "awaiting_info"
+            field = current_field
 
-        state["response"] = ""
+        response = await process_field_executor.ainvoke(
+            {
+                "current_field_details": field,
+                "data_id": field.get("data_id"),
+                "field_label": field.get("field_label"),
+                "field_type": field.get("field_type"),
+                "is_required": field.get("is_required"),
+                "validation_message": field.get("validation_message", ""),
+                "options": field.get("options", []),
+                "user_message": user_message
+            }
+        )
 
+        output_text = (response.get("output") if isinstance(response, dict) else None) or str(response)
+
+        try:
+            cleaned_str = ast.literal_eval(output_text)
+            form_data = json.loads(cleaned_str['text'])
+        except Exception:
+            form_data = {"status": "failed", "message": "Invalid input format."}
+
+        history = conversation_history.copy()
+        history.append({"role": "user", "content": user_message})
+
+        current_field_details_updated = form_data.get('current_field_details')
+        success = form_data.get('success', False)
+        if isinstance(current_field_details_updated, dict) and success:
+            # Update filled_fields (dict)
+            filled_fields = filled_fields.copy() if filled_fields else {}
+            filled_fields[current_field_details_updated['data_id']] = current_field_details_updated
+            # Remove from missing_fields
+            missing_fields = [f for f in missing_fields if (f.get('data_id') if isinstance(f, dict) else f) != current_field_details_updated['data_id']]
+            current_field = missing_fields[0] if missing_fields else None
+            status = "completed" if not missing_fields else "awaiting_info"
+            response_text = form_data.get("message", "")
+
+            # If more fields to fill, recursively call process_field_input
+            if current_field:
+                next_state = {
+                    **state,
+                    "filled_fields": filled_fields,
+                    "missing_fields": missing_fields,
+                    "current_field": current_field,
+                    "conversation_history": history,
+                    "status": status,
+                    "response": response_text,
+                    "thread_id": thread_id,
+                }
+                return await process_field_input(next_state)
+
+            return {
+                **state,
+                "filled_fields": filled_fields,
+                "form_fields": form_fields,
+                "missing_fields": missing_fields,
+                "current_field": current_field,
+                "conversation_history": history,
+                "status": status,
+                "response": response_text,
+                "thread_id": thread_id,
+            }
+        else:
+            # Not success, keep asking for correct info
+            response_text = form_data.get("message", "Please provide the correct information for the field.")
+            status = "awaiting_info"
+            history.append({"role": "assistant", "content": response_text})
+            return {
+                **state,
+                "conversation_history": history,
+                "status": status,
+                "response": response_text,
+                "thread_id": thread_id,
+            }
+    else:
         return {
-            "response": state["response"],
-            "status": state["status"],
-            "filled_fields": state["filled_fields"],
-            "missing_fields": state["missing_fields"],
-            "current_field": state["current_field"]
+            **state,
+            "status": "completed" if not missing_fields else "awaiting_info",
+            "thread_id": thread_id,
         }
-    # else:
-    #     # Not success, keep asking for correct info
-    #     response_text = form_data.get("message", "Please provide the correct information for the field.")
-    #     status = "awaiting_info"
-    #     history.append({"role": "assistant", "content": response_text})
-    #     return {
-    #         **state,
-    #         "conversation_history": history,
-    #         "status": status,
-    #         "response": response_text
-    #     }
-
 # Conditional edge function
 def route_next_step(state: FormFillerState) -> str:
     """
@@ -291,21 +338,112 @@ form_filler_graph = StateGraph(FormFillerState)
 # Add nodes
 form_filler_graph.add_node("analyze_form", analyze_form)
 form_filler_graph.add_node("process_field_input", process_field_input)
-form_filler_graph.add_node("human_input", human_input)
+#form_filler_graph.add_node("human_input", human_input)
 
 # Add edges
 form_filler_graph.add_edge(START, "analyze_form")
-form_filler_graph.add_conditional_edges("analyze_form", route_next_step)
-form_filler_graph.add_edge("human_input", "process_field_input")
+form_filler_graph.add_edge("analyze_form", "process_field_input")
+#form_filler_graph.add_conditional_edges("analyze_form", route_next_step)
+#form_filler_graph.add_edge("human_input", "process_field_input")
 form_filler_graph.add_conditional_edges("process_field_input", route_next_step)
 # Remove this line: form_filler_graph.add_edge("end", END)
 
 # Compile the graph with checkpointing and human-in-the-loop support
 compiled_graph = form_filler_graph.compile(
-    checkpointer=checkpointer,
-    interrupt_before=["human_input"]
+    checkpointer=checkpointer
 )
+print(compiled_graph.get_graph().draw_ascii())
 
+async def chat_analyze_form(state: FormFillerState) -> Dict[str, Any]:
+    """
+    Analyzes the user message and form fields for the chat-based form-filling process.
+
+    Args:
+        user_message: The initial user message
+        form_fields: List of form fields to fill
+        
+    Returns:
+        Initial state and response information
+    """
+    thread_id = str(uuid4())
+    
+    initial_state = {
+        "user_message": state["user_message"],
+        "form_fields": state["form_fields"],
+        "filled_fields": [],
+        "missing_fields": [],
+        "current_field": None,
+        #"next_field": None,
+        "conversation_history": [],
+        "status": "in_progress",
+        "response_message": "",
+        "thread_id": thread_id
+    }
+    
+    config = {"configurable": {"thread_id": thread_id}}
+
+    try:
+        result = await compiled_graph.ainvoke(initial_state, config)
+ 
+        return {
+            "thread_id": thread_id,
+            "response_message": result["response_message"],
+            "status": result["status"],
+            "filled_fields": result["filled_fields"],
+            "form_fields": result["form_fields"],
+            "missing_fields": result["missing_fields"],
+            "current_field": result["current_field"],
+            "conversation_history": result["conversation_history"]
+        }
+    except Exception as e:
+            print("LangGraph Error:", e)
+            traceback.print_exc()
+            return {"error": str(e), "traceback": traceback.format_exc()}
+
+async def start_form_filling(user_message: str, form_fields: list) -> Dict[str, Any]:
+    """
+    Initializes a new form-filling session.
+    
+    Args:
+        user_message: The initial user message
+        form_fields: List of form fields to fill
+        
+    Returns:
+        Initial state and response information
+    """
+    thread_id = str(uuid4())
+    
+    initial_state = {
+        "user_message": user_message,
+        "form_fields": form_fields,
+        "filled_fields": {},
+        "missing_fields": [],
+        "current_field": None,
+        #"next_field": None,
+        "conversation_history": [],
+        "status": "in_progress",
+        "response": "",
+        "thread_id": thread_id
+    }
+    
+    config = {"configurable": {"thread_id": thread_id}}
+
+    try:
+        result = await compiled_graph.ainvoke(initial_state, config)
+ 
+        return {
+            "thread_id": thread_id,
+            "response": result["response"],
+            "status": result["status"],
+            "filled_fields": result["filled_fields"],
+            "missing_fields": result["missing_fields"],
+            "current_field": result["current_field"],
+            "conversation_history": result["conversation_history"]
+        }
+    except Exception as e:
+            print("LangGraph Error:", e)
+            traceback.print_exc()
+            return {"error": str(e), "traceback": traceback.format_exc()}
 # Helper function to initialize the form-filling process
 async def start_form_filling(user_message: str, form_fields: list) -> Dict[str, Any]:
     """

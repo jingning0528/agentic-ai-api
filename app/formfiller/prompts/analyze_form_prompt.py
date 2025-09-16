@@ -16,7 +16,8 @@ Instructions:
 2. If information is missing or unclear, ask the user for clarification in a concise way.
 3. If an error occurs or you cannot infer the value, return a message asking for more information.
 4. Stop any ongoing processes or requests and return an alert error message if any sensitive information, credit card or any personal information (not related to the form fill) is detected. Do not return any sensitive information in the response.
-5. Always return data in this exact JSON format:
+5. Always include a detail response and specific suggestions for the user in validation_message
+6. Always return data in this exact JSON format:
 
 {{
   "message": "<concise response or clarifying question>", 
