@@ -120,8 +120,8 @@ def get_schema():
             "formFields": [
                 {
                     "data_id": "string - unique identifier for this field",
-                    "field_label": "string - human-readable label for the field",
-                    "field_type": "string - type of input (text, radio, select, etc.)",
+                    "fieldLabel": "string - human-readable label for the field",
+                    "fieldType": "string - type of input (text, radio, select, etc.)",
                     "field_value": "string - initial value (empty string by default)",
                     "is_required": "boolean - whether this field must be filled",
                     "options": "array of strings - possible values for dropdown/radio fields (optional)"
@@ -137,8 +137,8 @@ def get_schema():
             "formFields": [
                 {
                     "data_id": "V1IsEligibleForFeeExemption",
-                    "field_label": "Are you eligible for fee exemption?",
-                    "field_type": "radio",
+                    "fieldLabel": "Are you eligible for fee exemption?",
+                    "fieldType": "radio",
                     "field_value": "",
                     "is_required": True,
                     "options": ["Yes", "No"]

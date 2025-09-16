@@ -50,9 +50,9 @@ checkpointer = MemorySaver()
 class FormField(TypedDict):
     """Structure for individual form fields"""
     field_id: str  # Corresponds to data_id in the API model
-    label: str  # Corresponds to field_label in the API model
-    type: str  # input, select, radio, checkbox, textarea, etc. - Corresponds to field_type
-    value: Optional[str]  # Corresponds to field_value in the API model
+    fieldLabel: str  # Corresponds to fieldLabel in the API model
+    fieldType: str  # input, select, radio, checkbox, textarea, etc. - Corresponds to fieldType
+    fieldValue: Optional[str]  # Corresponds to fieldValue in the API model
     required: bool  # Corresponds to is_required in the API model
     options: Optional[List[str]]  # For dropdown, radio, etc. - Same in API model
     description: Optional[str]  # Help text - Not in API model but preserved
@@ -122,7 +122,7 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
     response_message = state.get("response_message", "")
     thread_id = state.get("thread_id", str(uuid4()))
 
-    # Add conversation history for context if available
+    # Add conversation history summary for context if available, but avoid duplicate 'content' keys
     if conversation_history:
         history_context = "Previous conversation:\n"
         for entry in conversation_history:
@@ -135,7 +135,9 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
             else:
                 role = str(role_val) if role_val else "Unknown"
             history_context += f"{role}: {content_val}\n"
-        conversation_history.append(SystemMessage(content=history_context))
+        # Only add the summary if it is not already present as a 'content' value
+        if not any(entry.get("content", None) == history_context for entry in conversation_history if isinstance(entry, dict)):
+            conversation_history.append({"role": "system", "content": history_context})
 
     # get labels for all the fields
     search_results = search_tool(json.dumps({"message": user_message, "formFields": form_fields}))
@@ -171,7 +173,24 @@ async def analyze_form(state: FormFillerState) -> FormFillerState:
         for f in new_filled_fields:
             if isinstance(f, dict) and f.get('data_id') not in existing_ids:
                 filled_fields.append(f)
-    missing_fields = cleaned_str.get("missing_fields", [])
+
+    # Filter missing_fields: remove any whose data_id exists in form_fields and fieldValue is not empty
+    raw_missing_fields = cleaned_str.get("missing_fields", [])
+    # Build a set of data_ids in form_fields with non-empty fieldValue
+    filled_data_ids = set()
+    for f in form_fields:
+        if isinstance(f, dict) and f.get('data_id') and f.get('fieldValue') not in (None, ""):
+            filled_data_ids.add(f['data_id'])
+    # Support both str and dict in missing_fields
+    missing_fields = []
+    for f in raw_missing_fields:
+        if isinstance(f, dict):
+            if f.get('data_id') not in filled_data_ids:
+                missing_fields.append(f)
+        else:
+            if f not in filled_data_ids:
+                missing_fields.append(f)
+
     status = "completed" if not missing_fields else "awaiting_info"
     current_field = missing_fields[0] if missing_fields else None
 
@@ -252,8 +271,8 @@ async def process_field_input(state: FormFillerState) -> FormFillerState:
             {
                 "current_field_details": field,
                 "data_id": field.get("data_id"),
-                "field_label": field.get("field_label"),
-                "field_type": field.get("field_type"),
+                "fieldLabel": field.get("fieldLabel"),
+                "fieldType": field.get("fieldType"),
                 "is_required": field.get("is_required"),
                 "validation_message": field.get("validation_message", ""),
                 "options": field.get("options", []),
@@ -284,6 +303,22 @@ async def process_field_input(state: FormFillerState) -> FormFillerState:
                 filled_fields.append(current_field_details_updated)
             # Remove from missing_fields
             missing_fields = [f for f in missing_fields if (f.get('data_id') if isinstance(f, dict) else f) != current_field_details_updated['data_id']]
+
+            # Filter missing_fields: remove any whose data_id exists in form_fields and fieldValue is not empty
+            filled_data_ids = set()
+            for ff in form_fields:
+                if isinstance(ff, dict) and ff.get('data_id') and ff.get('fieldValue') not in (None, ""):
+                    filled_data_ids.add(ff['data_id'])
+            filtered_missing_fields = []
+            for f in missing_fields:
+                if isinstance(f, dict):
+                    if f.get('data_id') not in filled_data_ids:
+                        filtered_missing_fields.append(f)
+                else:
+                    if f not in filled_data_ids:
+                        filtered_missing_fields.append(f)
+            missing_fields = filtered_missing_fields
+
             current_field = missing_fields[0] if missing_fields else None
             status = "completed" if not missing_fields else "awaiting_info"
             response_text = form_data.get("message", "")

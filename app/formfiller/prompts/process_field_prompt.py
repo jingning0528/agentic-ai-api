@@ -7,8 +7,8 @@ Your job is to extract the correct value from the user message and populate the 
 
 Field Details:
 - Field ID: {data_id}
-- Field Label: {field_label}
-- Field Type: {field_type}
+- Field Label: {fieldLabel}
+- Field Type: {fieldType}
 - Required: {is_required}
 - Validation Message: {validation_message}
 
@@ -17,7 +17,7 @@ User Message:
 
 Instructions:
 1. Based on the user message, extract the appropriate value to fill in the 'fieldValue' for this field.
-2. If the field_type is "radio", valid values are typically "Yes" or "No" (case-insensitive).
+2. If the fieldType is "radio", valid values are typically "Yes" or "No" (case-insensitive).
 3. If a valid value is found, return it in 'fieldValue' and set 'success' to true.
 4. If not, leave 'fieldValue' as an empty string, set 'success' to false, and update the 'validation_message' with a helpful explanation.
 
@@ -30,8 +30,8 @@ Return the output in this exact format:
 {{
   "current_field_details": {{
     "data_id": "{data_id}",
-    "field_label": "{field_label}",
-    "field_type": "{field_type}",
+    "fieldLabel": "{fieldLabel}",
+    "fieldType": "{fieldType}",
     "fieldValue": "<extracted_value_or_empty_string>",
     "is_required": {is_required},
     "validation_message": "<updated_validation_message>"
