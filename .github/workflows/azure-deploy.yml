@@ -22,7 +22,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
+    environment: dev
     
     steps:
       - name: Checkout repository
