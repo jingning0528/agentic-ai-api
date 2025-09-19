@@ -80,11 +80,11 @@ jobs:
       - name: Build and push container image
         run: |
           cd app
-          az acr build --registry ${{ env.AZURE_ENV_NAME }}acr --image api:${{ github.sha }} .
+          az acr build --registry agenticaiapiacr --image api:${{ github.sha }} .
 
       - name: Update Container App
         run: |
           az containerapp update \
-            --name api \
+            --name agenticaiapi-api \
             --resource-group pen-match-api-v2 \
-            --image ${{ env.AZURE_ENV_NAME }}acr.azurecr.io/api:${{ github.sha }}
+            --image agenticaiapiacr.azurecr.io/api:${{ github.sha }}
