@@ -1,32 +1,33 @@
 # -------------
 # Root Level Terraform Configuration
 # -------------
-# Create the main resource group for all application resources
+# Use existing resource group in Canada West, but deploy services in Canada Central
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
-  location = var.location
+  location = "canadawest"  # Existing RG location
   tags     = var.common_tags
   lifecycle {
     ignore_changes = [
-      tags
+      tags,
+      location  # Don't try to change location of existing RG
     ]
   }
 }
 
-# Log Analytics Workspace
+# Log Analytics Workspace - Deploy in Canada Central for VNET integration
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "${var.app_name}-logs"
-  location            = azurerm_resource_group.main.location
+  location            = var.location  # Canada Central - where VNET is
   resource_group_name = azurerm_resource_group.main.name
   sku                 = var.log_analytics_sku
   retention_in_days   = var.log_analytics_retention_days
   tags                = var.common_tags
 }
 
-# Application Insights
+# Application Insights - Deploy in Canada Central
 resource "azurerm_application_insights" "main" {
   name                = "${var.app_name}-ai"
-  location            = azurerm_resource_group.main.location
+  location            = var.location  # Canada Central - where VNET is
   resource_group_name = azurerm_resource_group.main.name
   application_type    = "web"
   workspace_id        = azurerm_log_analytics_workspace.main.id
@@ -40,6 +41,7 @@ module "network" {
   source = "./modules/network"
 
   common_tags              = var.common_tags
+  location                 = var.location  # Canada Central - where VNET is
   resource_group_name      = azurerm_resource_group.main.name
   vnet_address_space       = var.vnet_address_space
   vnet_name                = var.vnet_name
@@ -53,7 +55,7 @@ module "cosmos" {
 
   app_name                   = var.app_name
   common_tags                = var.common_tags
-  location                   = var.location
+  location                   = var.location  # Canada Central - where VNET is
   resource_group_name        = azurerm_resource_group.main.name
   private_endpoint_subnet_id = module.network.private_endpoint_subnet_id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
@@ -62,34 +64,34 @@ module "cosmos" {
   depends_on = [azurerm_resource_group.main, module.network]
 }
 
-# Container Registry
+# Container Registry - Deploy in Canada Central for better performance
 resource "azurerm_container_registry" "main" {
   name                = "${var.app_name}acr"
   resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  location            = var.location  # Canada Central - where VNET is
   sku                 = "Basic"
   admin_enabled       = false
   tags                = var.common_tags
 }
 
-# Container App Environment
+# Container App Environment - Deploy in Canada Central for VNET integration
 resource "azurerm_container_app_environment" "main" {
   name                       = "${var.app_name}-env"
-  location                   = azurerm_resource_group.main.location
+  location                   = var.location  # Canada Central - where VNET is
   resource_group_name        = azurerm_resource_group.main.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
   tags                       = var.common_tags
 }
 
-# User-assigned Managed Identity
+# User-assigned Managed Identity - Deploy in Canada Central
 resource "azurerm_user_assigned_identity" "main" {
   name                = "${var.app_name}-identity"
   resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  location            = var.location  # Canada Central - where VNET is
   tags                = var.common_tags
 }
 
-# Container App
+# Container App - Deploy in Canada Central for VNET integration
 resource "azurerm_container_app" "api" {
   name                         = "${var.app_name}-api"
   container_app_environment_id = azurerm_container_app_environment.main.id

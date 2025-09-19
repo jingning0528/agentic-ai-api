@@ -17,7 +17,7 @@ env:
   VNET_NAME: ${{ secrets.VNET_NAME }}
   VNET_RESOURCE_GROUP_NAME: ${{ secrets.VNET_RESOURCE_GROUP_NAME }}
   AZURE_ENV_NAME: agentic-ai-api
-  AZURE_LOCATION: eastus
+  AZURE_LOCATION: canadacentral
 
 jobs:
   deploy:
@@ -57,10 +57,27 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_USE_OIDC: true
 
+      - name: Import existing resource group
+        run: |
+          cd infra
+          # Import existing resource group from Canada West
+          terraform import azurerm_resource_group.main /subscriptions/5ebfa7cd-3b83-4a77-8928-b5c5b92232f9/resourceGroups/pen-match-api-v2 || true
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: true
+
       - name: Terraform Plan
         run: |
           cd infra
-          terraform plan -var-file="main.tfvars.json" -out=tfplan
+          terraform plan \
+            -var-file="main.tfvars.json" \
+            -var="environment_name=${{ env.AZURE_ENV_NAME }}" \
+            -var="location=${{ env.AZURE_LOCATION }}" \
+            -var="vnet_name=${{ secrets.VNET_NAME }}" \
+            -var="vnet_resource_group_name=e5a95d-tools-networking" \
+            -out=tfplan
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
