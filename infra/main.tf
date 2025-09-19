@@ -14,6 +14,53 @@ data "azurerm_virtual_network" "existing" {
   resource_group_name = var.vnet_resource_group_name
 }
 
+# Network Security Group for Container Apps subnet
+resource "azurerm_network_security_group" "container_apps" {
+  name                = "${var.app_name}-container-apps-nsg"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  tags                = var.common_tags
+
+  # Allow inbound traffic from VNET
+  security_rule {
+    name                       = "AllowVnetInbound"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "*"
+  }
+
+  # Allow outbound traffic to VNET
+  security_rule {
+    name                       = "AllowVnetOutbound"
+    priority                   = 100
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  # Allow outbound to Internet for Container Apps platform
+  security_rule {
+    name                       = "AllowInternetOutbound"
+    priority                   = 110
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "Internet"
+  }
+}
+
 # Create Container Apps subnet in existing VNET
 resource "azurerm_subnet" "container_apps" {
   name                 = "container-apps-subnet"
@@ -30,6 +77,12 @@ resource "azurerm_subnet" "container_apps" {
       ]
     }
   }
+}
+
+# Associate NSG with Container Apps subnet
+resource "azurerm_subnet_network_security_group_association" "container_apps" {
+  subnet_id                 = azurerm_subnet.container_apps.id
+  network_security_group_id = azurerm_network_security_group.container_apps.id
 }
 
 # Log Analytics Workspace - Deploy in Canada Central for VNET integration

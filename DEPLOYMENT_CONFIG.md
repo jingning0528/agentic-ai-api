@@ -3,7 +3,8 @@
 ## 📋 Configuration Summary
 
 ### **Resource Details:**
-- **Resource Group**: `pen-match-api-v2` (existing, Canada Central)
+- **Resource Group**: `agentic-ai-api-prod-rg` (new, Canada Central)
+- **Security Group**: `DO_PuC_Azure_Live_e5a95d_Owners`
 - **Subscription**: `e5a95d-tools - PEN` (5ebfa7cd-3b83-4a77-8928-b5c5b92232f9)
 - **Location**: `canadacentral`
 - **VNET**: `e5a95d-tools-vwan-spoke` in `e5a95d-tools-networking` resource group
@@ -22,6 +23,7 @@
 ### **Networking:**
 ✅ Private Container App Environment (no public IPs)
 ✅ Dedicated Container Apps subnet (`10.46.90.32/27`)
+✅ Network Security Group with proper rules
 ✅ Integration with existing VNET  
 ✅ Proper subnet delegation for Container Apps
 ✅ Internal load balancer only (complies with security policy)  
