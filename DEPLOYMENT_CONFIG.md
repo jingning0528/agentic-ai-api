@@ -3,10 +3,10 @@
 ## 📋 Configuration Summary
 
 ### **Resource Details:**
-- **Resource Group**: `agentic-ai-api-rg` (new, Canada Central)
+- **Resource Group**: `pen-match-api-v2` (existing, Canada Central)
 - **Subscription**: `e5a95d-tools - PEN` (5ebfa7cd-3b83-4a77-8928-b5c5b92232f9)
 - **Location**: `canadacentral`
-- **VNET**: Existing in `e5a95d-tools-networking` resource group
+- **VNET**: `e5a95d-tools-vwan-spoke` in `e5a95d-tools-networking` resource group
 - **Address Space**: `10.46.90.0/24`
 
 ### **Services to be Created:**
