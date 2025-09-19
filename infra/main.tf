@@ -1,17 +1,11 @@
 # -------------
 # Root Level Terraform Configuration
 # -------------
-# Use existing resource group in Canada West, but deploy services in Canada Central
+# Create new resource group in Canada Central
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
-  location = "canadawest"  # Existing RG location
+  location = var.location
   tags     = var.common_tags
-  lifecycle {
-    ignore_changes = [
-      tags,
-      location  # Don't try to change location of existing RG
-    ]
-  }
 }
 
 # Log Analytics Workspace - Deploy in Canada Central for VNET integration

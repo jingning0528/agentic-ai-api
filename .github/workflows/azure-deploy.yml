@@ -57,17 +57,6 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_USE_OIDC: true
 
-      - name: Import existing resource group
-        run: |
-          cd infra
-          # Import existing resource group from Canada West
-          terraform import azurerm_resource_group.main /subscriptions/5ebfa7cd-3b83-4a77-8928-b5c5b92232f9/resourceGroups/pen-match-api-v2 || true
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          ARM_USE_OIDC: true
-
       - name: Terraform Plan
         run: |
           cd infra

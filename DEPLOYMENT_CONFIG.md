@@ -3,7 +3,7 @@
 ## 📋 Configuration Summary
 
 ### **Resource Details:**
-- **Resource Group**: `pen-match-api-v2` (existing, Canada Central)
+- **Resource Group**: `agentic-ai-api-rg` (new, Canada Central)
 - **Subscription**: `e5a95d-tools - PEN` (5ebfa7cd-3b83-4a77-8928-b5c5b92232f9)
 - **Location**: `canadacentral`
 - **VNET**: Existing in `e5a95d-tools-networking` resource group
@@ -57,17 +57,17 @@ When you push to main branch:
 3. **Configure environment variables** in Container App
 4. **Test the deployed API**
 
-## Cross-Region Deployment Strategy
+## Single-Region Deployment Strategy
 
-This deployment uses a cross-region strategy to integrate with existing infrastructure:
+This deployment creates all resources in a single region for optimal performance and networking:
 
-- **Resource Group**: Located in `Canada West` (existing infrastructure)
-- **Services**: Deployed in `Canada Central` (to match VNET location)  
+- **Resource Group**: `agentic-ai-api-rg` in `Canada Central` (new)
+- **All Services**: Deployed in `Canada Central` 
 - **VNET Integration**: Uses existing VNET in Canada Central region
 
-This setup allows us to maintain organizational structure while ensuring proper networking integration.
+This setup ensures all resources are co-located for best performance and simplified networking.
 
-## ✅ Ready to Deploy!
+## ✅ Ready to Deploy
 
-The configuration is now set for Canada Central services with your existing Canada West resource group and Canada Central VNET integration. 
+The configuration is now set to create a new resource group and all services in Canada Central with your existing Canada Central VNET integration. 
 Push your changes to trigger the deployment!
