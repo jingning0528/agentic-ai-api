@@ -59,12 +59,6 @@ variable "azure_openai_embedding_deployment" {
   default     = "text-embedding-3-large"
 }
 
-variable "client_id" {
-  description = "Azure client ID for the service principal"
-  type        = string
-  sensitive   = true
-}
-
 variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)
@@ -114,24 +108,6 @@ variable "repo_name" {
 variable "resource_group_name" {
   description = "Name of the resource group"
   type        = string
-}
-
-variable "subscription_id" {
-  description = "Azure subscription ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "tenant_id" {
-  description = "Azure tenant ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "use_oidc" {
-  description = "Use OIDC for authentication"
-  type        = bool
-  default     = true
 }
 
 variable "vnet_address_space" {
