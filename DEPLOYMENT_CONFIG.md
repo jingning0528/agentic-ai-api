@@ -8,6 +8,7 @@
 - **Location**: `canadacentral`
 - **VNET**: `e5a95d-tools-vwan-spoke` in `e5a95d-tools-networking` resource group
 - **Address Space**: `10.46.90.0/24`
+- **New Container Apps Subnet**: `10.46.90.32/27` (32 IP addresses)
 
 ### **Services to be Created:**
 ✅ Container Registry: `agenticaiapiacr.azurecr.io`  
@@ -19,9 +20,11 @@
 ✅ Managed Identity: For secure service authentication  
 
 ### **Networking:**
-✅ Private Endpoints for secure communication  
+✅ Private Container App Environment (no public IPs)
+✅ Dedicated Container Apps subnet (`10.46.90.32/27`)
 ✅ Integration with existing VNET  
-✅ Proper subnet configuration  
+✅ Proper subnet delegation for Container Apps
+✅ Internal load balancer only (complies with security policy)  
 
 ## 🔧 Required GitHub Secrets
 

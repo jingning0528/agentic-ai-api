@@ -8,6 +8,30 @@ resource "azurerm_resource_group" "main" {
   tags     = var.common_tags
 }
 
+# Data source for existing VNET
+data "azurerm_virtual_network" "existing" {
+  name                = var.vnet_name
+  resource_group_name = var.vnet_resource_group_name
+}
+
+# Create Container Apps subnet in existing VNET
+resource "azurerm_subnet" "container_apps" {
+  name                 = "container-apps-subnet"
+  resource_group_name  = var.vnet_resource_group_name
+  virtual_network_name = var.vnet_name
+  address_prefixes     = ["10.46.90.32/27"]  # Next available /27 subnet (32 IPs)
+  
+  delegation {
+    name = "container-apps-delegation"
+    service_delegation {
+      name    = "Microsoft.App/environments"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
 # Log Analytics Workspace - Deploy in Canada Central for VNET integration
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "${var.app_name}-logs"
@@ -70,12 +94,13 @@ resource "azurerm_container_registry" "main" {
 
 # Container App Environment - Deploy in Canada Central for VNET integration
 resource "azurerm_container_app_environment" "main" {
-  name                         = "${var.app_name}-env"
-  location                     = var.location  # Canada Central - where VNET is
-  resource_group_name          = azurerm_resource_group.main.name
-  log_analytics_workspace_id   = azurerm_log_analytics_workspace.main.id
-  internal_load_balancer_enabled = true  # Disable public IP addresses due to policy
-  tags                         = var.common_tags
+  name                           = "${var.app_name}-env"
+  location                       = var.location  # Canada Central - where VNET is
+  resource_group_name            = azurerm_resource_group.main.name
+  log_analytics_workspace_id     = azurerm_log_analytics_workspace.main.id
+  internal_load_balancer_enabled = true  # Use internal load balancer to comply with policy
+  infrastructure_subnet_id       = azurerm_subnet.container_apps.id
+  tags                           = var.common_tags
 }
 
 # User-assigned Managed Identity - Deploy in Canada Central
