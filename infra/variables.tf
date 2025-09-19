@@ -2,6 +2,11 @@
 # Common Variables for Azure Infrastructure
 # -------------
 
+variable "environment_name" {
+  description = "Name of the environment (used by AZD)"
+  type        = string
+}
+
 variable "api_image" {
   description = "The image for the API container"
   type        = string
