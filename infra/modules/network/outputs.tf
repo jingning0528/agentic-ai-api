@@ -1,17 +1,22 @@
 
 output "container_instance_subnet_id" {
   description = "The subnet ID for the container instance."
-  value       = azapi_resource.container_instance_subnet.id
+  value       = data.azurerm_subnet.container_instance.id
 }
 
 output "app_service_subnet_id" {
-  description = "The subnet ID for the App Service."
-  value       = azapi_resource.app_service_subnet.id
+  description = "The subnet ID for the App Service/Container Apps."
+  value       = data.azurerm_subnet.web.id
 }
 
 output "private_endpoint_subnet_id" {
   description = "The subnet ID for private endpoints."
-  value       = azapi_resource.privateendpoints_subnet.id
+  value       = data.azurerm_subnet.privateendpoints.id
+}
+
+output "web_subnet_id" {
+  description = "The subnet ID for web/Container Apps."
+  value       = data.azurerm_subnet.web.id
 }
 
 output "dns_servers" {

@@ -64,6 +64,7 @@ jobs:
             -var-file="main.tfvars.json" \
             -var="environment_name=${{ env.AZURE_ENV_NAME }}" \
             -var="location=${{ env.AZURE_LOCATION }}" \
+            -var="vnet_name=${{ secrets.VNET_NAME }}" \
             -var="vnet_resource_group_name=e5a95d-tools-networking" \
             -out=tfplan
         env:
