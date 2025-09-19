@@ -1,6 +1,5 @@
 output "RESOURCE_GROUP_ID" {
-
-  value = azurerm_resource_group.main.id
+  value = data.azurerm_resource_group.main.id
 }
 
 output "AZURE_CONTAINER_REGISTRY_ENDPOINT" {

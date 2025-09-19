@@ -42,19 +42,20 @@ module "network" {
   depends_on = [data.azurerm_resource_group.main]
 }
 
-module "cosmos" {
-  source = "./modules/cosmos"
-
-  app_name                   = var.app_name
-  common_tags                = var.common_tags
-  location                   = data.azurerm_resource_group.main.location
-  resource_group_name        = data.azurerm_resource_group.main.name
-  private_endpoint_subnet_id = module.network.private_endpoint_subnet_id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
-  embedding_dimensions       = 1536 # text-embedding-3-small dimensions
-
-  depends_on = [data.azurerm_resource_group.main, module.network]
-}
+# Cosmos DB module commented out for initial deployment
+# module "cosmos" {
+#   source = "./modules/cosmos"
+#
+#   app_name                   = var.app_name
+#   common_tags                = var.common_tags
+#   location                   = data.azurerm_resource_group.main.location
+#   resource_group_name        = data.azurerm_resource_group.main.name
+#   private_endpoint_subnet_id = module.network.private_endpoint_subnet_id
+#   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+#   embedding_dimensions       = 1536 # text-embedding-3-small dimensions
+#
+#   depends_on = [data.azurerm_resource_group.main, module.network]
+# }
 
 # Container Registry
 resource "azurerm_container_registry" "main" {
@@ -122,17 +123,18 @@ resource "azurerm_container_app" "api" {
   }
 }
 
+# Cosmos DB role assignment commented out for initial deployment
 # due to circular dependency issues this resource is created at root level
-// Assign the App Service's managed identity to the Cosmos DB SQL Database with Data Contributor role
-resource "azurerm_cosmosdb_sql_role_assignment" "cosmosdb_role_assignment_app_service_data_contributor" {
-  resource_group_name = data.azurerm_resource_group.main.name
-  account_name        = module.cosmos.account_name
-  role_definition_id  = "${module.cosmos.account_id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
-  principal_id        = azurerm_user_assigned_identity.main.principal_id
-  scope               = module.cosmos.account_id
-
-  depends_on = [
-    azurerm_user_assigned_identity.main,
-    module.cosmos
-  ]
-}
+# // Assign the App Service's managed identity to the Cosmos DB SQL Database with Data Contributor role
+# resource "azurerm_cosmosdb_sql_role_assignment" "cosmosdb_role_assignment_app_service_data_contributor" {
+#   resource_group_name = data.azurerm_resource_group.main.name
+#   account_name        = module.cosmos.account_name
+#   role_definition_id  = "${module.cosmos.account_id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
+#   principal_id        = azurerm_user_assigned_identity.main.principal_id
+#   scope               = module.cosmos.account_id
+#
+#   depends_on = [
+#     azurerm_user_assigned_identity.main,
+#     module.cosmos
+#   ]
+# }

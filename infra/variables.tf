@@ -34,40 +34,15 @@ variable "app_service_sku_name_frontend" {
   default     = "B1" # Basic tier 
 }
 
-# Azure OpenAI Configuration
-variable "azure_openai_endpoint" {
-  description = "Azure OpenAI service endpoint URL"
-  type        = string
-  sensitive   = true
-}
-
-variable "azure_openai_api_key" {
-  description = "Azure OpenAI API key"
-  type        = string
-  sensitive   = true
-}
-
-variable "azure_openai_deployment_name" {
-  description = "Azure OpenAI model deployment name"
-  type        = string
-  default     = "gpt-4o"
-}
-
-variable "azure_openai_embedding_deployment" {
-  description = "Azure OpenAI embedding model deployment name"
-  type        = string
-  default     = "text-embedding-3-large"
-}
-
 variable "common_tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)
 }
 
-
 variable "frontend_image" {
   description = "The image for the Frontend container"
   type        = string
+  default     = ""
 }
 
 variable "frontdoor_sku_name" {
@@ -75,6 +50,7 @@ variable "frontdoor_sku_name" {
   type        = string
   default     = "Standard_AzureFrontDoor"
 }
+
 variable "image_tag" {
   description = "Tag for the container images"
   type        = string
@@ -102,7 +78,6 @@ variable "log_analytics_sku" {
 variable "repo_name" {
   description = "Name of the repository, used for resource naming"
   type        = string
-  nullable    = false
 }
 
 variable "resource_group_name" {
@@ -123,19 +98,4 @@ variable "vnet_name" {
 variable "vnet_resource_group_name" {
   description = "Resource group name where the virtual network exists"
   type        = string
-}
-variable "azure_openai_llm_endpoint" {
-  description = "The endpoint for the Azure OpenAI LLM service."
-  type        = string
-  nullable    = false
-}
-variable "azure_openai_embedding_endpoint" {
-  description = "The endpoint for the Azure OpenAI embedding service."
-  type        = string
-  nullable    = false
-}
-variable "cosmosdb_key" {
-  description = "The key for the Cosmos DB instance."
-  type        = string
-  nullable    = false
 }
