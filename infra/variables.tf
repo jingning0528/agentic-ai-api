@@ -36,12 +36,6 @@ variable "azure_openai_endpoint" {
   sensitive   = true
 }
 
-variable "azure_openai_api_key" {
-  description = "Azure OpenAI API key"
-  type        = string
-  sensitive   = true
-}
-
 variable "azure_openai_deployment_name" {
   description = "Azure OpenAI model deployment name"
   type        = string
@@ -52,12 +46,6 @@ variable "azure_openai_embedding_deployment" {
   description = "Azure OpenAI embedding model deployment name"
   type        = string
   default     = "text-embedding-3-large"
-}
-
-variable "client_id" {
-  description = "Azure client ID for the service principal"
-  type        = string
-  sensitive   = true
 }
 
 variable "common_tags" {
@@ -106,23 +94,6 @@ variable "repo_name" {
   nullable    = false
 }
 
-variable "resource_group_name" {
-  description = "Name of the resource group"
-  type        = string
-}
-
-variable "subscription_id" {
-  description = "Azure subscription ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "tenant_id" {
-  description = "Azure tenant ID"
-  type        = string
-  sensitive   = true
-}
-
 variable "use_oidc" {
   description = "Use OIDC for authentication"
   type        = bool
@@ -134,15 +105,6 @@ variable "vnet_address_space" {
   description = "Address space for the virtual network, it is created by platform team"
 }
 
-variable "vnet_name" {
-  description = "Name of the existing virtual network"
-  type        = string
-}
-
-variable "vnet_resource_group_name" {
-  description = "Resource group name where the virtual network exists"
-  type        = string
-}
 variable "azure_openai_llm_endpoint" {
   description = "The endpoint for the Azure OpenAI LLM service."
   type        = string
