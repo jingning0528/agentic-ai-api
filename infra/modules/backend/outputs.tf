@@ -4,9 +4,4 @@ output "backend_managed_identity_principal_id" {
   depends_on  = [azurerm_linux_web_app.backend]
 }
 
-output "cosmosdb_primary_key" {
-  description = "Primary key for the Cosmos DB account"
-  value       = azurerm_cosmosdb_account.cosmosdb_sql.primary_master_key
-  sensitive   = true
-}
 

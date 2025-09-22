@@ -1,6 +1,32 @@
 # -------------
 # Common Variables for Azure Infrastructure
 # -------------
+
+variable "vnet_name" {
+  description = "Name of the existing virtual network"
+  type        = string
+}
+
+variable "vnet_resource_group_name" {
+  description = "Resource group where the virtual network exists"
+  type        = string
+}
+
+variable "azure_openai_api_key" {
+  description = "Azure OpenAI API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "cosmosdb_key" {
+  description = "Cosmos DB primary key"
+  type        = string
+  sensitive   = true
+}
+
+
+
+
 variable "resource_group_name" {
   description = "Name of the existing resource group"
   type        = string

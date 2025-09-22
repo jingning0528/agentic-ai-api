@@ -19,6 +19,13 @@ data "azurerm_resource_group" "main" {
   name = var.resource_group_name
 }
 
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  resource_group_name = data.azurerm_resource_group.main.name
+  location            = var.location
+  common_tags         = var.common_tags
+}
 
 
 
@@ -53,7 +60,6 @@ module "cosmos" {
 }
 
 
-
 module "backend" {
   source = "./modules/backend"
 
@@ -83,7 +89,7 @@ module "backend" {
   cosmosdb_endpoint       = module.cosmos.cosmosdb_endpoint
   cosmosdb_db_name        = module.cosmos.cosmosdb_sql_database_name
   cosmosdb_container_name = module.cosmos.cosmosdb_sql_database_container_name
-  cosmosdb_key            = var.cosmosdb_key
+  cosmosdb_key            = module.cosmos.cosmosdb_primary_key
 
 }
 
