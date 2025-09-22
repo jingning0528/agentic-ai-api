@@ -21,9 +21,15 @@ jobs:
       TF_VAR_resource_group_name: ${{ secrets.RESOURCE_GROUP_NAME }}
       TF_VAR_vnet_name: ${{ secrets.VNET_NAME }}
       TF_VAR_vnet_resource_group_name: ${{ secrets.VNET_RESOURCE_GROUP_NAME }}
-      TF_VAR_azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
       TF_VAR_api_image: ${{ secrets.API_IMAGE }}
       TF_VAR_image_tag: ${{ secrets.IMAGE_TAG }}
+      TF_VAR_azure_openai_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      TF_VAR_azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      TF_VAR_azure_openai_deployment_name: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
+      TF_VAR_azure_openai_embedding_deployment: ${{ secrets.AZURE_OPENAI_EMBEDDING_DEPLOYMENT }}
+      TF_VAR_azure_openai_embedding_endpoint: ${{ secrets.AZURE_OPENAI_EMBEDDING_ENDPOINT }}
+      TF_VAR_azure_openai_llm_endpoint: ${{ secrets.AZURE_OPENAI_LLM_ENDPOINT }}
+
 
 
 
