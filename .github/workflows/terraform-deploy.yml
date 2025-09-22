@@ -22,6 +22,10 @@ jobs:
       TF_VAR_vnet_name: ${{ secrets.VNET_NAME }}
       TF_VAR_vnet_resource_group_name: ${{ secrets.VNET_RESOURCE_GROUP_NAME }}
       TF_VAR_azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      TF_VAR_api_image: ${{ secrets.API_IMAGE }}
+      TF_VAR_image_tag: ${{ secrets.IMAGE_TAG }}
+
+
 
     steps:
       # 1️⃣ Checkout repo
