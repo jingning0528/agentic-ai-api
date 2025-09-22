@@ -37,17 +37,7 @@ resource "azurerm_linux_web_app" "backend" {
       allowed_origins     = ["*"]
       support_credentials = false
     }
-    dynamic "ip_restriction" {
-      for_each = split(",", var.frontend_possible_outbound_ip_addresses)
-      content {
-        ip_address                = ip_restriction.value != "" ? "${ip_restriction.value}/32" : null
-        virtual_network_subnet_id = ip_restriction.value == "" ? var.app_service_subnet_id : null
-        service_tag               = ip_restriction.value == "" ? "AppService" : null
-        action                    = "Allow"
-        name                      = "AFInbound${replace(ip_restriction.value, ".", "")}"
-        priority                  = 100
-      }
-    }
+
     ip_restriction {
       name        = "DenyAll"
       action      = "Deny"

@@ -1,6 +1,10 @@
 # -------------
 # Common Variables for Azure Infrastructure
 # -------------
+variable "resource_group_name" {
+  description = "Name of the existing resource group"
+  type        = string
+}
 
 variable "api_image" {
   description = "The image for the API container"

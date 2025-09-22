@@ -70,7 +70,7 @@ module "backend" {
   azure_openai_embedding_deployment       = var.azure_openai_embedding_deployment
   backend_subnet_id                       = module.network.app_service_subnet_id
   common_tags                             = var.common_tags
-  frontend_possible_outbound_ip_addresses = module.frontend.possible_outbound_ip_addresses
+  frontend_possible_outbound_ip_addresses = ""
   location                                = var.location
   log_analytics_workspace_id              = module.monitoring.log_analytics_workspace_id
   private_endpoint_subnet_id              = module.network.private_endpoint_subnet_id
@@ -85,7 +85,6 @@ module "backend" {
   cosmosdb_container_name = module.cosmos.cosmosdb_sql_database_container_name
   cosmosdb_key            = var.cosmosdb_key
 
-  depends_on = [module.frontend]
 }
 
 
