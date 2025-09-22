@@ -3,7 +3,7 @@ name: Terraform Deploy
 on:
   push:
     branches:
-      - main   # or change to your branch
+      - main
 
 jobs:
   terraform:
@@ -11,27 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     env:
-      # Azure credentials for Terraform provider
+      # Azure credentials for Terraform provider using OIDC
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       ARM_USE_OIDC: true
 
-      # Terraform input variables
-      TF_VAR_resource_group_name: ${{ secrets.RESOURCE_GROUP_NAME }}
-      TF_VAR_vnet_name: ${{ secrets.VNET_NAME }}
-      TF_VAR_vnet_resource_group_name: ${{ secrets.VNET_RESOURCE_GROUP_NAME }}
-      TF_VAR_api_image: ${{ secrets.API_IMAGE }}
-      TF_VAR_image_tag: ${{ secrets.IMAGE_TAG }}
-      TF_VAR_azure_openai_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      # Sensitive Terraform variables from GitHub Secrets
       TF_VAR_azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
-      TF_VAR_azure_openai_deployment_name: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}
-      TF_VAR_azure_openai_embedding_deployment: ${{ secrets.AZURE_OPENAI_EMBEDDING_DEPLOYMENT }}
-      TF_VAR_azure_openai_embedding_endpoint: ${{ secrets.AZURE_OPENAI_EMBEDDING_ENDPOINT }}
-      TF_VAR_azure_openai_llm_endpoint: ${{ secrets.AZURE_OPENAI_LLM_ENDPOINT }}
-
-
-
+      # Add other sensitive TF_VAR_ variables here if needed
 
     steps:
       # 1️⃣ Checkout repo
@@ -42,7 +30,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.12.2"   # use the version you need
+          terraform_version: "1.12.2"
 
       # 3️⃣ Terraform init
       - name: Terraform Init
@@ -52,7 +40,7 @@ jobs:
       # 4️⃣ Terraform plan
       - name: Terraform Plan
         working-directory: ./infra
-        run: terraform plan -out=tfplan -var-file="main.tfvars.json"
+        run: terraform plan -out=tfplan -var-file="main.tfvars.json" -compact-warnings
 
       # 5️⃣ Terraform apply
       - name: Terraform Apply
