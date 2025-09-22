@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">=1.5.0"
+  required_version = ">= 1.12"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -26,6 +26,8 @@ provider "azurerm" {
       prevent_deletion_if_contains_resources = false
     }
   }
-  # Use ARM_ environment variables for authentication
-  use_oidc = true
+  subscription_id = var.subscription_id
+  tenant_id       = var.tenant_id
+  use_oidc        = var.use_oidc
+  client_id       = var.client_id
 }

@@ -1,9 +1,11 @@
-# Reference existing subnet CIDRs based on your Azure environment
+# Calculate subnet CIDRs based on VNet address space
 locals {
-  # Use the actual subnet CIDRs from your existing infrastructure
-  app_service_subnet_cidr        = "10.46.90.32/27"  # web-subnet
-  web_subnet_cidr                = "10.46.90.32/27"  # web-subnet (same as app service for Container Apps)
-  private_endpoints_subnet_cidr  = "10.46.90.64/28"  # privateendpoints-subnet
-  container_instance_subnet_cidr = "10.46.90.80/28"  # container-instance-subnet
-  aks_nodes_subnet_cidr          = "10.46.90.0/27"   # aks-nodes (for reference)
+  # Split the address space
+  vnet_ip_base                   = split("/", var.vnet_address_space)[0]
+  octets                         = split(".", local.vnet_ip_base)
+  base_ip                        = "${local.octets[0]}.${local.octets[1]}.${local.octets[2]}"
+  app_service_subnet_cidr        = "${local.base_ip}.0/27"
+  web_subnet_cidr                = "${local.base_ip}.32/27"
+  private_endpoints_subnet_cidr  = "${local.base_ip}.64/28"
+  container_instance_subnet_cidr = "${local.base_ip}.80/28"
 }
