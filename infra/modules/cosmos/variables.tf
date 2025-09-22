@@ -43,7 +43,6 @@ variable "cosmosdb_sql_database_name" {
   description = "Name of the Cosmos DB SQL database."
 }
 
-}
 
 variable "embedding_dimensions" {
   description = "Dimensions for the vector embeddings (1536 for text-embedding-3-small, 3072 for text-embedding-3-large)"
