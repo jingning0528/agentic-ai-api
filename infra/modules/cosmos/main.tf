@@ -25,28 +25,7 @@ resource "azurerm_cosmosdb_account" "cosmosdb_sql" {
   }
 }
 
-resource "azurerm_monitor_diagnostic_setting" "cosmosdb_sql_diagnostics" {
-  name                       = "${var.app_name}-cosmosdb-diagnostics"
-  target_resource_id         = azurerm_cosmosdb_account.cosmosdb_sql.id
-  log_analytics_workspace_id = var.log_analytics_workspace_id
 
-  enabled_log {
-    category = "DataPlaneRequests"
-  }
-  enabled_log {
-    category = "MongoRequests"
-  }
-  enabled_log {
-    category = "QueryRuntimeStatistics"
-  }
-  enabled_log {
-    category = "PartitionKeyRUConsumption"
-  }
-  enabled_log {
-    category = "ControlPlaneRequests"
-  }
-
-}
 
 
 resource "azurerm_cosmosdb_sql_database" "cosmosdb_sql_db" {

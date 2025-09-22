@@ -89,17 +89,7 @@ variable "location" {
   default     = "Canada Central"
 }
 
-variable "log_analytics_retention_days" {
-  description = "Number of days to retain data in Log Analytics Workspace"
-  type        = number
-  default     = 30
-}
 
-variable "log_analytics_sku" {
-  description = "SKU for Log Analytics Workspace"
-  type        = string
-  default     = "PerGB2018"
-}
 
 variable "repo_name" {
   description = "Name of the repository, used for resource naming"

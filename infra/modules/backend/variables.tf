@@ -28,17 +28,7 @@ variable "app_service_subnet_id" {
   nullable    = false
 }
 
-variable "appinsights_connection_string" {
-  description = "The Application Insights connection string for monitoring."
-  type        = string
-  nullable    = false
-}
 
-variable "appinsights_instrumentation_key" {
-  description = "The Application Insights instrumentation key."
-  type        = string
-  nullable    = false
-}
 
 # Azure OpenAI Configuration Variables
 variable "azure_openai_endpoint" {
@@ -109,12 +99,6 @@ variable "image_tag" {
 }
 variable "location" {
   description = "The Azure region where resources will be created."
-  type        = string
-  nullable    = false
-}
-
-variable "log_analytics_workspace_id" {
-  description = "The resource ID of the Log Analytics workspace for diagnostics."
   type        = string
   nullable    = false
 }

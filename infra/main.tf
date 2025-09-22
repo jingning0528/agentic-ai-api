@@ -19,15 +19,6 @@ data "azurerm_resource_group" "main" {
   name = var.resource_group_name
 }
 
-module "monitoring" {
-  source = "./modules/monitoring"
-
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = var.location
-  common_tags         = var.common_tags
-}
-
-
 
 # -------------
 # Modules based on Dependency
@@ -53,7 +44,6 @@ module "cosmos" {
   location                   = var.location
   resource_group_name        = data.azurerm_resource_group.main.name
   private_endpoint_subnet_id = module.network.private_endpoint_subnet_id
-  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
   embedding_dimensions       = 1536 # text-embedding-3-small dimensions
 
   depends_on = [data.azurerm_resource_group.main, module.network]
@@ -68,8 +58,6 @@ module "backend" {
   app_name                                = var.app_name
   app_service_sku_name_backend            = var.app_service_sku_name_backend
   app_service_subnet_id                   = module.network.app_service_subnet_id
-  appinsights_connection_string           = module.monitoring.appinsights_connection_string
-  appinsights_instrumentation_key         = module.monitoring.appinsights_instrumentation_key
   azure_openai_endpoint                   = var.azure_openai_endpoint
   azure_openai_api_key                    = var.azure_openai_api_key
   azure_openai_deployment_name            = var.azure_openai_deployment_name
@@ -78,7 +66,6 @@ module "backend" {
   common_tags                             = var.common_tags
   frontend_possible_outbound_ip_addresses = ""
   location                                = var.location
-  log_analytics_workspace_id              = module.monitoring.log_analytics_workspace_id
   private_endpoint_subnet_id              = module.network.private_endpoint_subnet_id
   repo_name                               = var.repo_name
   resource_group_name                     = data.azurerm_resource_group.main.name

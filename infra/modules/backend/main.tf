@@ -52,8 +52,6 @@ resource "azurerm_linux_web_app" "backend" {
     PORT                                  = "80"
     WEBSITES_PORT                         = "3000"
     DOCKER_ENABLE_CI                      = "true"
-    APPLICATIONINSIGHTS_CONNECTION_STRING = var.appinsights_connection_string
-    APPINSIGHTS_INSTRUMENTATIONKEY        = var.appinsights_instrumentation_key
     WEBSITE_SKIP_RUNNING_KUDUAGENT        = "false"
     WEBSITES_ENABLE_APP_SERVICE_STORAGE   = "false"
     WEBSITE_ENABLE_SYNC_UPDATE_SITE       = "1"
@@ -69,42 +67,11 @@ resource "azurerm_linux_web_app" "backend" {
     COSMOS_DB_ENDPOINT               = var.cosmosdb_endpoint
     COSMOS_DB_DATABASE_NAME          = var.cosmosdb_db_name
     COSMOS_DB_CONTAINER_NAME         = var.cosmosdb_container_name
-    AZURE_COSMOSDB_DIAGNOSTICS_LEVEL = "debug"
-    AZURE_LOG_LEVEL                  = "verbose"
     COSMOS_DB_KEY                    = module.cosmos.cosmosdb_primary_key
 
-  }
-  logs {
-    detailed_error_messages = true
-    failed_request_tracing  = true
-    http_logs {
-      file_system {
-        retention_in_days = 7
-        retention_in_mb   = 100
-      }
-    }
   }
   tags = var.common_tags
   lifecycle {
     ignore_changes = [tags]
-  }
-}
-
-# Backend Diagnostics
-resource "azurerm_monitor_diagnostic_setting" "backend_diagnostics" {
-  name                       = "${var.app_name}-backend-diagnostics"
-  target_resource_id         = azurerm_linux_web_app.backend.id
-  log_analytics_workspace_id = var.log_analytics_workspace_id
-  enabled_log {
-    category = "AppServiceHTTPLogs"
-  }
-  enabled_log {
-    category = "AppServiceConsoleLogs"
-  }
-  enabled_log {
-    category = "AppServiceAppLogs"
-  }
-  enabled_log {
-    category = "AppServicePlatformLogs"
   }
 }
