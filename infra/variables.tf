@@ -23,12 +23,6 @@ variable "app_service_sku_name_backend" {
   default     = "B2" # Basic tier 
 }
 
-variable "app_service_sku_name_frontend" {
-  description = "SKU name for the frontend App Service Plan"
-  type        = string
-  default     = "B1" # Basic tier 
-}
-
 # Azure OpenAI Configuration
 variable "azure_openai_endpoint" {
   description = "Azure OpenAI service endpoint URL"
@@ -53,17 +47,6 @@ variable "common_tags" {
   type        = map(string)
 }
 
-
-variable "frontend_image" {
-  description = "The image for the Frontend container"
-  type        = string
-}
-
-variable "frontdoor_sku_name" {
-  description = "SKU name for the Front Door"
-  type        = string
-  default     = "Standard_AzureFrontDoor"
-}
 variable "image_tag" {
   description = "Tag for the container images"
   type        = string
