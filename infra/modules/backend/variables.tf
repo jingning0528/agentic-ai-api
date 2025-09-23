@@ -141,23 +141,4 @@ variable "azure_openai_embedding_endpoint" {
   nullable    = false
 }
 
-variable "cosmosdb_endpoint" {
-  description = "Cosmos DB account endpoint"
-  type        = string
-}
 
-variable "cosmosdb_db_name" {
-  description = "Cosmos DB SQL database name"
-  type        = string
-}
-
-variable "cosmosdb_container_name" {
-  description = "Cosmos DB SQL container name"
-  type        = string
-}
-
-variable "cosmosdb_key" {
-  description = "Cosmos DB primary key"
-  type        = string
-  sensitive   = true
-}
