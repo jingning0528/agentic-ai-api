@@ -10,7 +10,7 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - 'test_openai_function.py'
+      - 'app/test_openai_function.py'
       - 'requirements-test.txt'
   workflow_dispatch:
     inputs:
