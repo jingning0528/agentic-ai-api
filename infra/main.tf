@@ -20,6 +20,11 @@ data "azurerm_resource_group" "main" {
 }
 
 
+data "azurerm_virtual_network" "main" {
+  name                = var.vnet_name
+  resource_group_name = var.vnet_resource_group_name
+}
+
 resource "azapi_resource" "web_subnet" {
   name      = "web-subnet"
   parent_id = azurerm_virtual_network.main.id
