@@ -11,40 +11,35 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     env:
-      # Azure credentials for Terraform provider using OIDC
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_USE_OIDC: true
-
-      # Sensitive Terraform variables from GitHub Secrets
+      # Sensitive Terraform variables
       TF_VAR_azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
-      # Add other sensitive TF_VAR_ variables here if needed
       TF_VAR_vnet_name: ${{ secrets.VNET_NAME }}
       TF_VAR_vnet_resource_group_name: ${{ secrets.VNET_RESOURCE_GROUP_NAME }}
 
     steps:
-      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Terraform
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "1.12.2"
 
-      # 3️⃣ Terraform init
       - name: Terraform Init
         working-directory: ./infra
         run: terraform init
 
-      # 4️⃣ Terraform plan
       - name: Terraform Plan
         working-directory: ./infra
         run: terraform plan -out=tfplan -var-file="main.tfvars.json" -compact-warnings
 
-      # 5️⃣ Terraform apply
       - name: Terraform Apply
         working-directory: ./infra
         run: terraform apply -auto-approve tfplan
