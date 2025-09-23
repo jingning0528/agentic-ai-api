@@ -118,4 +118,3 @@ variable "azure_openai_embedding_endpoint" {
   type        = string
   nullable    = false
 }
-

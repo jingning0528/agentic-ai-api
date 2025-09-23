@@ -20,6 +20,7 @@ jobs:
       # Sensitive Terraform variables from GitHub Secrets
       TF_VAR_azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
       # Add other sensitive TF_VAR_ variables here if needed
+      TF_VAR_cosmosdb_key: ${{ secrets.COSMOSDB_PRIMARY_KEY }}
 
     steps:
       # 1️⃣ Checkout repo
