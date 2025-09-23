@@ -28,33 +28,38 @@ data "azurerm_virtual_network" "main" {
 # Web Subnet
 resource "azapi_resource" "web_subnet" {
   name      = "web-subnet"
-  parent_id = data.azurerm_virtual_network.main.id
   type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
-  properties = jsonencode({
-    addressPrefix = var.web_subnet_cidr
+  parent_id = data.azurerm_virtual_network.main.id
+  body = jsonencode({
+    properties = {
+      addressPrefix = var.web_subnet_cidr
+    }
   })
 }
 
 # App Service Subnet
 resource "azapi_resource" "app_service_subnet" {
   name      = "app-service-subnet"
-  parent_id = data.azurerm_virtual_network.main.id
   type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
-  properties = jsonencode({
-    addressPrefix = var.app_service_subnet_cidr
+  parent_id = data.azurerm_virtual_network.main.id
+  body = jsonencode({
+    properties = {
+      addressPrefix = var.app_service_subnet_cidr
+    }
   })
 }
 
 # Container Instance Subnet
 resource "azapi_resource" "container_instance_subnet" {
   name      = "container-instance-subnet"
-  parent_id = data.azurerm_virtual_network.main.id
   type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
-  properties = jsonencode({
-    addressPrefix = var.container_instance_subnet_cidr
+  parent_id = data.azurerm_virtual_network.main.id
+  body = jsonencode({
+    properties = {
+      addressPrefix = var.container_instance_subnet_cidr
+    }
   })
 }
-
 
 
 # -------------
