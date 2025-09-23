@@ -18,13 +18,6 @@ variable "azure_openai_api_key" {
   sensitive   = true
 }
 
-variable "cosmosdb_key" {
-  description = "Cosmos DB primary key"
-  type        = string
-  sensitive   = true
-}
-
-
 
 
 variable "resource_group_name" {
