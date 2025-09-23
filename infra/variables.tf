@@ -130,17 +130,3 @@ variable "container_instance_subnet_cidr" {
 }
 
 
-variable "web_nsg_id" {
-  type        = string
-  description = "The ID of the Network Security Group for the web subnet"
-}
-
-variable "as_nsg_id" {
-  type        = string
-  description = "The ID of the Network Security Group for the app service subnet"
-}
-
-variable "ci_nsg_id" {
-  type        = string
-  description = "The ID of the Network Security Group for the container instance subnet"
-}
