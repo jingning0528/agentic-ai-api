@@ -68,4 +68,4 @@ echo "========================================="
 echo "Import process completed!"
 echo "Current Terraform state:"
 terraform state list
-echo "========================================="
+echo "========================================= "
