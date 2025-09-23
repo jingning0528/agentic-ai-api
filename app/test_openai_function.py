@@ -1,153 +1,139 @@
+"""
+Simplified test for basic Azure OpenAI functionality using gpt-4o-mini.
+"""
 import os
-import json
-from openai import AzureOpenAI
+import asyncio
+from dotenv import load_dotenv
+from langchain_openai import AzureChatOpenAI
+from langchain_core.messages import HumanMessage
 
-def get_weather(location: str, unit: str = "celsius") -> str:
-    """
-    Get the current weather for a given location.
-    
-    Args:
-        location (str): The city and state/country, e.g. "San Francisco, CA"
-        unit (str): Temperature unit, either "celsius" or "fahrenheit"
-    
-    Returns:
-        str: Weather information in JSON format
-    """
-    # Mock weather data for testing
-    weather_data = {
-        "location": location,
-        "temperature": 22 if unit == "celsius" else 72,
-        "unit": unit,
-        "description": "Partly cloudy",
-        "humidity": 65,
-        "wind_speed": 10
-    }
-    return json.dumps(weather_data)
+# Load environment variables
+load_dotenv()
 
-def test_openai_function_calling():
-    """Test OpenAI function calling with Azure OpenAI"""
-    
-    # Initialize Azure OpenAI client
-    client = AzureOpenAI(
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        api_version="2024-02-01",
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", "https://pen-match-v2-foundry.openai.azure.com/")
-    )
-    
-    # Define the function schema for OpenAI
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get the current weather for a given location",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {
-                            "type": "string",
-                            "description": "The city and state/country, e.g. San Francisco, CA"
-                        },
-                        "unit": {
-                            "type": "string",
-                            "enum": ["celsius", "fahrenheit"],
-                            "description": "Temperature unit"
-                        }
-                    },
-                    "required": ["location"]
-                }
-            }
-        }
-    ]
-    
-    # Test messages
-    messages = [
-        {"role": "user", "content": "What's the weather like in Toronto, Canada?"}
-    ]
-    
+def test_basic_openai_connection():
+    """Test basic connection to Azure OpenAI."""
     try:
-        print("🚀 Testing OpenAI Function Calling...")
-        print(f"📍 Endpoint: {client._base_url}")
-        print(f"📝 User Query: {messages[0]['content']}")
-        print("-" * 50)
-        
-        # Make the initial API call
-        response = client.chat.completions.create(
-            model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini"),
-            messages=messages,
-            tools=tools,
-            tool_choice="auto"
+        # Initialize Azure OpenAI LLM (same as your llm_client.py)
+        llm = AzureChatOpenAI(
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+            openai_api_version="2024-12-01-preview",
         )
         
-        # Get the assistant's response
-        assistant_message = response.choices[0].message
-        print(f"🤖 Assistant Response: {assistant_message.content}")
+        # Simple test message
+        messages = [HumanMessage(content="Hello, respond with 'Connection successful' if you can see this.")]
         
-        # Check if the assistant wants to call a function
-        if assistant_message.tool_calls:
-            print("🔧 Function call detected!")
-            
-            # Add the assistant's message to conversation
-            messages.append(assistant_message)
-            
-            # Process each function call
-            for tool_call in assistant_message.tool_calls:
-                function_name = tool_call.function.name
-                function_args = json.loads(tool_call.function.arguments)
-                
-                print(f"📞 Calling function: {function_name}")
-                print(f"📋 Arguments: {function_args}")
-                
-                # Call the actual function
-                if function_name == "get_weather":
-                    function_result = get_weather(**function_args)
-                    print(f"📊 Function Result: {function_result}")
-                    
-                    # Add function result to conversation
-                    messages.append({
-                        "tool_call_id": tool_call.id,
-                        "role": "tool",
-                        "name": function_name,
-                        "content": function_result
-                    })
-            
-            # Get the final response with function results
-            final_response = client.chat.completions.create(
-                model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini"),
-                messages=messages
-            )
-            
-            print("-" * 50)
-            print(f"✅ Final Response: {final_response.choices[0].message.content}")
-            
+        # Get response
+        response = llm.invoke(messages)
+        
+        print("✅ Azure OpenAI Connection Test Passed")
+        print(f"Response: {response.content}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Azure OpenAI Connection Test Failed: {str(e)}")
+        return False
+
+def test_gpt4o_mini_specific():
+    """Test specifically targeting gpt-4o-mini functionality."""
+    try:
+        llm = AzureChatOpenAI(
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+            openai_api_version="2024-12-01-preview",
+            temperature=0.1,  # Low temperature for consistent responses
+        )
+        
+        # Test with a simple prompt that should work well with gpt-4o-mini
+        test_prompt = "What is 2+2? Answer with just the number."
+        messages = [HumanMessage(content=test_prompt)]
+        
+        response = llm.invoke(messages)
+        
+        print("✅ GPT-4o-mini Test Passed")
+        print(f"Question: {test_prompt}")
+        print(f"Answer: {response.content}")
+        
+        # Verify the response contains "4"
+        if "4" in response.content:
+            print("✅ Response validation passed")
+            return True
         else:
-            print("ℹ️  No function call was made")
+            print("⚠️  Response validation failed - unexpected answer")
+            return False
             
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        print(f"❌ GPT-4o-mini Test Failed: {str(e)}")
         return False
-    
-    return True
 
-if __name__ == "__main__":
-    # Check required environment variables
-    required_vars = ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT"]
-    missing_vars = [var for var in required_vars if not os.getenv(var)]
+async def test_async_functionality():
+    """Test async functionality of Azure OpenAI."""
+    try:
+        llm = AzureChatOpenAI(
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+            openai_api_version="2024-12-01-preview",
+        )
+        
+        messages = [HumanMessage(content="Say 'Async test successful'")]
+        response = await llm.ainvoke(messages)
+        
+        print("✅ Async Test Passed")
+        print(f"Response: {response.content}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Async Test Failed: {str(e)}")
+        return False
+
+def check_environment_variables():
+    """Check if required environment variables are set."""
+    required_vars = [
+        "AZURE_OPENAI_ENDPOINT",
+        "AZURE_OPENAI_DEPLOYMENT_NAME"
+    ]
+    
+    missing_vars = []
+    for var in required_vars:
+        if not os.environ.get(var):
+            missing_vars.append(var)
     
     if missing_vars:
-        print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
-        print("\nSet them using:")
-        for var in missing_vars:
-            print(f"export {var}='your_value_here'")
+        print(f"❌ Missing environment variables: {', '.join(missing_vars)}")
+        return False
+    else:
+        print("✅ All required environment variables are set")
+        return True
+
+if __name__ == "__main__":
+    print("🚀 Starting simplified Azure OpenAI tests...\n")
+    
+    # Check environment first
+    env_ok = check_environment_variables()
+    if not env_ok:
+        print("\n❌ Environment check failed. Please set required variables in .env file")
         exit(1)
     
-    print("🧪 Starting OpenAI Function Calling Test")
-    print("=" * 60)
+    print()
     
-    success = test_openai_function_calling()
+    # Run basic tests
+    basic_test = test_basic_openai_connection()
+    print()
     
-    print("=" * 60)
-    if success:
-        print("✅ Test completed successfully!")
+    gpt4o_test = test_gpt4o_mini_specific()
+    print()
+    
+    # Run async test
+    async_test = asyncio.run(test_async_functionality())
+    print()
+    
+    # Summary
+    total_tests = 3
+    passed_tests = sum([basic_test, gpt4o_test, async_test])
+    
+    print(f"📊 Test Summary: {passed_tests}/{total_tests} tests passed")
+    
+    if passed_tests == total_tests:
+        print("🎉 All tests passed! Your Azure OpenAI setup is working correctly.")
     else:
-        print("❌ Test failed!")
+        print("⚠️  Some tests failed. Check your Azure OpenAI configuration.")
