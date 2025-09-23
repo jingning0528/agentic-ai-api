@@ -111,3 +111,20 @@ variable "azure_openai_embedding_endpoint" {
   type        = string
   nullable    = false
 }
+
+
+
+variable "web_subnet_cidr" {
+  type = string
+  description = "CIDR for the web subnet"
+}
+
+variable "app_service_subnet_cidr" {
+  type = string
+  description = "CIDR for the app service subnet"
+}
+
+variable "container_instance_subnet_cidr" {
+  type = string
+  description = "CIDR for the container instance subnet"
+}

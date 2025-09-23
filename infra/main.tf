@@ -20,6 +20,32 @@ data "azurerm_resource_group" "main" {
 }
 
 
+resource "azapi_resource" "web_subnet" {
+  name      = "web-subnet"
+  parent_id = azurerm_virtual_network.main.id
+  properties = jsonencode({
+    addressPrefix = var.web_subnet_cidr
+  })
+}
+
+resource "azapi_resource" "app_service_subnet" {
+  name      = "app-service-subnet"
+  parent_id = azurerm_virtual_network.main.id
+  properties = jsonencode({
+    addressPrefix = var.app_service_subnet_cidr
+  })
+}
+
+resource "azapi_resource" "container_instance_subnet" {
+  name      = "container-instance-subnet"
+  parent_id = azurerm_virtual_network.main.id
+  properties = jsonencode({
+    addressPrefix = var.container_instance_subnet_cidr
+  })
+}
+
+
+
 # -------------
 # Modules based on Dependency
 # -------------
