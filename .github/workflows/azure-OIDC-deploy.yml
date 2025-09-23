@@ -1,4 +1,4 @@
-name: Azure OIDC Test2
+name: Azure OIDC deploy
 
 on:
   workflow_dispatch:
