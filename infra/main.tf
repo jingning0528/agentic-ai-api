@@ -19,55 +19,6 @@ data "azurerm_resource_group" "main" {
   name = var.resource_group_name
 }
 
-# Reference existing VNet
-data "azurerm_virtual_network" "main" {
-  name                = var.vnet_name
-  resource_group_name = var.vnet_resource_group_name
-}
-
-# Web Subnet
-resource "azapi_resource" "web_subnet" {
-  name      = "web-subnet"
-  type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
-  parent_id = data.azurerm_virtual_network.main.id
-
-  body = {
-    properties = {
-      addressPrefix = var.web_subnet_cidr
-      networkSecurityGroup = { id = var.web_nsg_id }
-    }
-  }
-}
-
-# App Service Subnet
-resource "azapi_resource" "app_service_subnet" {
-  name      = "app-service-subnet"
-  type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
-  parent_id = data.azurerm_virtual_network.main.id
-
-  body = {
-    properties = {
-      addressPrefix = var.app_service_subnet_cidr
-      networkSecurityGroup = { id = var.as_nsg_id }
-    }
-  }
-}
-
-# Container Instance Subnet
-resource "azapi_resource" "container_instance_subnet" {
-  name      = "container-instance-subnet"
-  type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
-  parent_id = data.azurerm_virtual_network.main.id
-
-  body = {
-    properties = {
-      addressPrefix = var.container_instance_subnet_cidr
-      networkSecurityGroup = { id = var.ci_nsg_id }
-    }
-  }
-}
-
-
 # -------------
 # Modules based on Dependency
 # -------------
