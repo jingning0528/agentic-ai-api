@@ -129,22 +129,6 @@ variable "resource_group_name" {
 }
 
 
-#cosmosdb variables
-variable "cosmosdb_endpoint" {
-  description = "The endpoint URL for the Cosmos DB instance."
-  type        = string
-  nullable    = false
-}
-variable "cosmosdb_db_name" {
-  description = "The name of the Cosmos DB database."
-  type        = string
-  nullable    = false
-}
-variable "cosmosdb_container_name" {
-  description = "The name of the Cosmos DB container."
-  type        = string
-  nullable    = false
-}
 
 variable "azure_openai_llm_endpoint" {
   description = "The endpoint for the Azure OpenAI LLM service."
