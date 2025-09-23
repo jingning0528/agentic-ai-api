@@ -24,6 +24,9 @@ jobs:
 
       # Sensitive Terraform variables
       TF_VAR_azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      TF_VAR_vnet_name: ${{ secrets.VNET_NAME }}
+      TF_VAR_vnet_resource_group_name: ${{ secrets.VNET_RESOURCE_GROUP_NAME }}
+      TF_VAR_vnet_address_space: ${{ secrets.VNET_ADDRESS_SPACE }}  
 
     steps:
       - name: Checkout repository
