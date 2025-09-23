@@ -15,8 +15,8 @@ jobs:
     name: Terraform Apply
     runs-on: ubuntu-latest
     environment: dev
+    timeout-minutes: 30  # Add overall job timeout
     env:
-
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -47,25 +47,95 @@ jobs:
         working-directory: ./infra
         run: terraform init
 
+      - name: Check Existing Resources
+        working-directory: ./infra
+        timeout-minutes: 5
+        run: |
+          echo "Checking if resources exist before importing..."
+          
+          # Function to check if resource exists
+          check_resource() {
+            local resource_id="$1"
+            local resource_name="$2"
+            
+            echo "Checking $resource_name..."
+            if az resource show --ids "$resource_id" >/dev/null 2>&1; then
+              echo "✓ $resource_name exists"
+              return 0
+            else
+              echo "✗ $resource_name does not exist"
+              return 1
+            fi
+          }
+          
+          # Check App Service Plan
+          ASP_ID="/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/pen-match-api-v2/providers/Microsoft.Web/serverFarms/pen-match-api-v2-app-backend-asp"
+          check_resource "$ASP_ID" "App Service Plan"
+          
+          # Check NSGs
+          NSG_BASE="/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups"
+          check_resource "$NSG_BASE/pen-match-api-v2-pe-nsg" "Private Endpoints NSG"
+          check_resource "$NSG_BASE/pen-match-api-v2-as-nsg" "App Service NSG"
+          check_resource "$NSG_BASE/pen-match-api-v2-web-nsg" "Web NSG"
+          check_resource "$NSG_BASE/pen-match-api-v2-ci-nsg" "Container Instance NSG"
+
       - name: Import Existing Resources
         working-directory: ./infra
+        timeout-minutes: 10
+        continue-on-error: true
         run: |
-          # Import App Service Plan
-          terraform import module.backend.azurerm_service_plan.backend "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/pen-match-api-v2/providers/Microsoft.Web/serverFarms/pen-match-api-v2-app-backend-asp" || true
+          echo "Starting resource imports..."
           
-          # Import Network Security Groups
-          terraform import module.network.azurerm_network_security_group.privateendpoints "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups/pen-match-api-v2-pe-nsg" || true
+          # Function to import with timeout and better error handling
+          import_resource() {
+            local terraform_address="$1"
+            local azure_resource_id="$2"
+            local resource_name="$3"
+            
+            echo "Importing $resource_name..."
+            
+            # Use timeout command to limit execution time
+            if timeout 60s terraform import "$terraform_address" "$azure_resource_id" 2>/dev/null; then
+              echo "✓ Successfully imported $resource_name"
+            else
+              echo "⚠ Failed to import $resource_name (may not exist or already imported)"
+            fi
+          }
           
-          terraform import module.network.azurerm_network_security_group.app_service "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups/pen-match-api-v2-as-nsg" || true
+          # Import resources with timeout
+          import_resource \
+            "module.backend.azurerm_service_plan.backend" \
+            "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/pen-match-api-v2/providers/Microsoft.Web/serverFarms/pen-match-api-v2-app-backend-asp" \
+            "App Service Plan"
           
-          terraform import module.network.azurerm_network_security_group.web "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups/pen-match-api-v2-web-nsg" || true
+          import_resource \
+            "module.network.azurerm_network_security_group.privateendpoints" \
+            "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups/pen-match-api-v2-pe-nsg" \
+            "Private Endpoints NSG"
           
-          terraform import module.network.azurerm_network_security_group.container_instance "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups/pen-match-api-v2-ci-nsg" || true
-
+          import_resource \
+            "module.network.azurerm_network_security_group.app_service" \
+            "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups/pen-match-api-v2-as-nsg" \
+            "App Service NSG"
+          
+          import_resource \
+            "module.network.azurerm_network_security_group.web" \
+            "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups/pen-match-api-v2-web-nsg" \
+            "Web NSG"
+          
+          import_resource \
+            "module.network.azurerm_network_security_group.container_instance" \
+            "/subscriptions/$ARM_SUBSCRIPTION_ID/resourceGroups/$TF_VAR_vnet_resource_group_name/providers/Microsoft.Network/networkSecurityGroups/pen-match-api-v2-ci-nsg" \
+            "Container Instance NSG"
+          
+          echo "Import phase completed"
 
       - name: Terraform Plan
         working-directory: ./infra
-        run: 
-          terraform plan -var-file="main.tfvars.json" -compact-warnings
-          terraform apply -auto-approve -var-file="main.tfvars.json"
+        timeout-minutes: 10
+        run: terraform plan -var-file="main.tfvars.json" -compact-warnings
 
+      - name: Terraform Apply
+        working-directory: ./infra
+        timeout-minutes: 15
+        run: terraform apply -auto-approve -var-file="main.tfvars.json"
