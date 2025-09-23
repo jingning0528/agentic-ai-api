@@ -34,6 +34,7 @@ resource "azapi_resource" "web_subnet" {
   body = {
     properties = {
       addressPrefix = var.web_subnet_cidr
+      networkSecurityGroup = { id = var.web_nsg_id }
     }
   }
 }
@@ -47,6 +48,7 @@ resource "azapi_resource" "app_service_subnet" {
   body = {
     properties = {
       addressPrefix = var.app_service_subnet_cidr
+      networkSecurityGroup = { id = var.as_nsg_id }
     }
   }
 }
@@ -60,6 +62,7 @@ resource "azapi_resource" "container_instance_subnet" {
   body = {
     properties = {
       addressPrefix = var.container_instance_subnet_cidr
+      networkSecurityGroup = { id = var.ci_nsg_id }
     }
   }
 }
