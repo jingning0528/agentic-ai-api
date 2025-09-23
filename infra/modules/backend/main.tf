@@ -64,10 +64,11 @@ resource "azurerm_linux_web_app" "backend" {
     AZURE_OPENAI_LLM_ENDPOINT         = var.azure_openai_llm_endpoint
     AZURE_OPENAI_EMBEDDING_ENDPOINT   = var.azure_openai_embedding_endpoint
     # CosmosDB Configuration
-    COSMOS_DB_ENDPOINT               = module.cosmos.cosmosdb_endpoint
-    COSMOS_DB_DATABASE_NAME          = module.cosmos.cosmosdb_sql_database_name
-    COSMOS_DB_CONTAINER_NAME         = module.cosmos.cosmosdb_sql_container_name
-    COSMOS_DB_KEY                    = module.cosmos.cosmosdb_primary_key
+    COSMOS_DB_ENDPOINT       = var.cosmosdb_endpoint
+    COSMOS_DB_DATABASE_NAME  = var.cosmosdb_db_name
+    COSMOS_DB_CONTAINER_NAME = var.cosmosdb_container_name
+    COSMOS_DB_KEY            = var.cosmosdb_key
+
 
   }
   tags = var.common_tags

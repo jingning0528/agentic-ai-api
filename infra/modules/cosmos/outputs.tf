@@ -22,9 +22,15 @@ output "cosmosdb_sql_database_container_name" {
 
 }
 
+data "azurerm_cosmosdb_account_keys" "cosmosdb_keys" {
+  name                = azurerm_cosmosdb_account.cosmosdb_sql.name
+  resource_group_name = var.resource_group_name
+}
+
 output "cosmosdb_primary_key" {
-  value       = azurerm_cosmosdb_account.cosmosdb_sql.primary_master_key
+  value       = data.azurerm_cosmosdb_account_keys.cosmosdb_keys.primary_master_key
   description = "Primary key of the Cosmos DB"
   sensitive   = true
 }
+
 
