@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: 'pen-match-api-v2-webapp'  # Replace with your actual web app name
+  AZURE_WEBAPP_NAME: 'pen-match-api-v2-app'  # Replace with your actual web app name
   AZURE_WEBAPP_PACKAGE_PATH: '.'
   PYTHON_VERSION: '3.13'
 
