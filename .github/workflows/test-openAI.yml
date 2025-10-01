@@ -1,56 +1,47 @@
-name: Deploy and Test API on Azure Web App
+name: Deploy and Test Web App
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  AZURE_WEBAPP_NAME: 'pen-match-api-v2-webapp'  # Replace with your actual web app name
+  AZURE_WEBAPP_PACKAGE_PATH: '.'
+  PYTHON_VERSION: '3.13'
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy-and-test:
     runs-on: ubuntu-latest
+    environment: dev
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Azure Login using OIDC
+      uses: azure/login@v1
       with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Build application
-      run: npm run build --if-present
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'your-web-app-name'  # Replace with your Azure Web App name
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: .
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
-    - name: Wait for deployment
-      run: sleep 30
-
-    - name: Run API Tests
+    - name: Run Simple Test
       run: |
-        echo "Running API tests..."
-        npm test
-        
-    - name: Test API Endpoints
-      run: |
-        echo "Testing deployed API endpoints..."
-        curl -f https://your-web-app-name.azurewebsites.net/health || exit 1
-        # Add more endpoint tests as needed
+        echo "Running test to verify deployment workflow..."
+        python app/test_app.py
+        echo "Test completed successfully!"
 
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
+    - name: Azure Logout
+      run: |
+        az logout
       if: always()
-      with:
-        name: test-results
-        path: test-results/
